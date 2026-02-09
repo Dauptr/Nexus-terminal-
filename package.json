@@ -1,0 +1,21 @@
+{
+  "name": "nexus-ai-playground",
+  "version": "1.0.0",
+  "description": "Nexus AI Interface with Playground A & Real Terminal",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve . -p 3000",
+    "deploy": "node cli.js"
+  },
+  "keywords": ["ai", "playground", "pollinations", "nexus"],
+  "author": "Rodo",
+  "license": "MIT",
+  "devDependencies": {
+    "gh-pages": "^6.1.1"
+  },
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "ora": "^5.4.1",
+    "fs-extra": "^11.2.0"
+  }
+}
