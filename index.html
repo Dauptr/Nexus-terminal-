@@ -1695,25 +1695,57 @@
         let ghSessionOwner = localStorage.getItem('nexus_gh_owner') || null;
         let ghSessionRepo = localStorage.getItem('nexus_gh_repo') || null;
 
-                /* --- STREAMLINED IDE & DEVOPS --- */
-        function toggleRepoSettings() {
-            const panel = document.getElementById('ide-repo-settings');
+                /* --- STREAMLINED IDE & DEVOPS --- */        <div id="ide-repo-settings" class="hidden-ui bg-black border-b border-white/10 p-3 grid grid-cols-2 md:grid-cols-4 gap-2 items-end">
             
-            if (panel.classList.contains('hidden-ui')) {
-                // OPEN PANEL
-                panel.classList.remove('hidden-ui');
-                panel.classList.add('flex-ui');
-                
-                // Sync settings if available
-                if(ghSessionToken) UI.ghTokenInput.value = ghSessionToken;
-                if(ghSessionOwner) UI.ghOwner.value = ghSessionOwner;
-                if(ghSessionRepo) UI.ghRepo.value = ghSessionRepo;
-            } else {
-                // CLOSE PANEL
-                panel.classList.add('hidden-ui');
-                panel.classList.remove('flex-ui');
-            }
-        }
+            <!-- Wizard Intro -->
+            <div class="col-span-2 md:col-span-4 text-center mb-4">
+                <h4 class="text-white font-bold text-lg mb-2">🚀 Deployment Wizard</h4>
+                <p class="text-gray-400 text-sm">New to GitHub? Connect in 3 steps.</p>
+            </div>
+
+            <!-- GitHub Token -->
+            <div><label class="text-[8px] text-gray-500 uppercase font-bold tracking-wider mb-1 block">GitHub Token</label>
+            <input type="password" id="gh-token" placeholder="ghp_..." class="w-full bg-[#0d1117] border border-white/20 text-white text-[10px] p-1 rounded outline-none font-mono transition-colors" onchange="saveGitHubSettings()">
+                <!-- Added Hint -->
+                <div class="text-[9px] text-cyan-500 cursor-help hover:underline absolute right-2 top-1" onclick="showDeploymentWizard()" title="Click for guide">?</div>
+            </div>
+            
+            <!-- Owner -->
+            <div><label class="text-[8px] text-gray-500 uppercase font-bold tracking-wider mb-1 block">Owner</label>
+            <input type="text" id="gh-owner" placeholder="username" class="w-full bg-[#0d1117] border border-white/20 text-white text-[10px] p-1 rounded outline-none font-mono transition-colors">
+            </div>
+            
+            <!-- Repo Name -->
+            <div><label class="text-[8px] text-gray-500 uppercase font-bold tracking-wider mb-1 block">Repo Name</label>
+            <input type="text" id="gh-repo" placeholder="my-repo" class="w-full bg-[#0d1117] border border-white/20 text-white text-[10px] p-1 rounded outline-none font-mono transition-colors">
+            </div>
+            
+            <!-- Wizard Button -->
+            <div class="col-span-2 md:col-span-4 mt-4 border-t border-white/10 pt-4">
+                <button id="wiz-connect-btn" onclick="showDeploymentWizard()" class="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white text-xs font-bold py-3 rounded shadow-lg flex items-center justify-center gap-2 transition-all">
+                    <span>🔑 CONNECT WITH GITHUB</span>
+                </button>
+            </div>
+
+            <!-- Status Message Area -->
+            <div id="wizard-msg" class="col-span-2 md:col-span-4 mt-2 text-center text-sm text-gray-400 min-h-[40px]">
+                Click "Connect" to start.
+            </div>
+
+            <!-- Advanced Toggle -->
+            <div class="col-span-2 md:col-span-4 mt-2 pt-2 border-t border-white/10 flex justify-center">
+                <button onclick="wizardNextStep()" class="text-[10px] text-cyan-400 hover:text-white font-bold underline cursor-pointer">I have a token, show advanced settings</button>
+            </div>
+
+            <!-- Settings Info -->
+            <div class="col-span-2 md:col-span-4 mt-2 pt-2 border-t border-white/10 flex justify-between items-center">
+                <div class="text-[9px] text-gray-500 font-mono" id="file-sha-display">SHA: --</div>
+                <div>
+                    <button onclick="toggleRepoSettings()" class="text-[9px] bg-gray-800 hover:bg-gray-700 text-white px-2 py-1 rounded border border-white/10 flex items-center gap-1 hover:border-cyan-500/50 transition-colors"><span>⚙️ SETTINGS</span></button>
+                    <button onclick="pushToRepoFixed()" class="text-[9px] bg-green-900 hover:bg-green-800 text-white px-2 py-1 rounded border border-green-600 flex items-center gap-1 hover:border-green-500/50 transition-colors"><span>COMMIT & PUSH</span></button>
+                </div>
+            </div>
+        </div>
 
         /* --- NEW: DEPLOYMENT WIZARD (In-App Helper) --- */
         async function showDeploymentWizard() {
