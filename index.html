@@ -1695,176 +1695,48 @@
         let ghSessionOwner = localStorage.getItem('nexus_gh_owner') || null;
         let ghSessionRepo = localStorage.getItem('nexus_gh_repo') || null;
 
-                /* --- STREAMLINED IDE & DEVOPS --- */        <div id="ide-repo-settings" class="hidden-ui bg-black border-b border-white/10 p-3 grid grid-cols-2 md:grid-cols-4 gap-2 items-end">
-            
-            <!-- Wizard Intro -->
-            <div class="col-span-2 md:col-span-4 text-center mb-4">
-                <h4 class="text-white font-bold text-lg mb-2">🚀 Deployment Wizard</h4>
-                <p class="text-gray-400 text-sm">New to GitHub? Connect in 3 steps.</p>
-            </div>
-
-            <!-- GitHub Token -->
-            <div><label class="text-[8px] text-gray-500 uppercase font-bold tracking-wider mb-1 block">GitHub Token</label>
-            <input type="password" id="gh-token" placeholder="ghp_..." class="w-full bg-[#0d1117] border border-white/20 text-white text-[10px] p-1 rounded outline-none font-mono transition-colors" onchange="saveGitHubSettings()">
-                <!-- Added Hint -->
-                <div class="text-[9px] text-cyan-500 cursor-help hover:underline absolute right-2 top-1" onclick="showDeploymentWizard()" title="Click for guide">?</div>
-            </div>
-            
-            <!-- Owner -->
-            <div><label class="text-[8px] text-gray-500 uppercase font-bold tracking-wider mb-1 block">Owner</label>
-            <input type="text" id="gh-owner" placeholder="username" class="w-full bg-[#0d1117] border border-white/20 text-white text-[10px] p-1 rounded outline-none font-mono transition-colors">
-            </div>
-            
-            <!-- Repo Name -->
-            <div><label class="text-[8px] text-gray-500 uppercase font-bold tracking-wider mb-1 block">Repo Name</label>
-            <input type="text" id="gh-repo" placeholder="my-repo" class="w-full bg-[#0d1117] border border-white/20 text-white text-[10px] p-1 rounded outline-none font-mono transition-colors">
-            </div>
-            
-            <!-- Wizard Button -->
-            <div class="col-span-2 md:col-span-4 mt-4 border-t border-white/10 pt-4">
-                <button id="wiz-connect-btn" onclick="showDeploymentWizard()" class="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white text-xs font-bold py-3 rounded shadow-lg flex items-center justify-center gap-2 transition-all">
-                    <span>🔑 CONNECT WITH GITHUB</span>
-                </button>
-            </div>
-
-            <!-- Status Message Area -->
-            <div id="wizard-msg" class="col-span-2 md:col-span-4 mt-2 text-center text-sm text-gray-400 min-h-[40px]">
-                Click "Connect" to start.
-            </div>
-
-            <!-- Advanced Toggle -->
-            <div class="col-span-2 md:col-span-4 mt-2 pt-2 border-t border-white/10 flex justify-center">
-                <button onclick="wizardNextStep()" class="text-[10px] text-cyan-400 hover:text-white font-bold underline cursor-pointer">I have a token, show advanced settings</button>
-            </div>
-
-            <!-- Settings Info -->
-            <div class="col-span-2 md:col-span-4 mt-2 pt-2 border-t border-white/10 flex justify-between items-center">
-                <div class="text-[9px] text-gray-500 font-mono" id="file-sha-display">SHA: --</div>
-                <div>
-                    <button onclick="toggleRepoSettings()" class="text-[9px] bg-gray-800 hover:bg-gray-700 text-white px-2 py-1 rounded border border-white/10 flex items-center gap-1 hover:border-cyan-500/50 transition-colors"><span>⚙️ SETTINGS</span></button>
-                    <button onclick="pushToRepoFixed()" class="text-[9px] bg-green-900 hover:bg-green-800 text-white px-2 py-1 rounded border border-green-600 flex items-center gap-1 hover:border-green-500/50 transition-colors"><span>COMMIT & PUSH</span></button>
-                </div>
-            </div>
-        </div>
-
-        /* --- NEW: DEPLOYMENT WIZARD (In-App Helper) --- */
-        async function showDeploymentWizard() {
-            const msg = document.getElementById('wizard-msg');
-            const btn = document.getElementById('wiz-connect-btn');
-            
-            // 1. Create Token URL
-            const scope = encodeURIComponent("repo workflow");
-            const note = encodeURIComponent("Nexus AI App (Single HTML file)");
-            const authUrl = `https://github.com/settings/tokens/new?scopes=${scope}&description=${note}`;
-
-            // 2. Copy to Clipboard
-            try {
-                await navigator.clipboard.writeText(authUrl);
-                msg.innerHTML = `<span class="text-green-400">✅ Link copied!</span> Paste in browser to generate token.`;
-                btn.innerHTML = "NEXT STEP: PASTE TOKEN &rarr;";
-            } catch (err) {
-                msg.innerHTML = `<span class="text-red-400">⚠️ Copy failed. Enable clipboard permissions.</span>`;
-            }
+        function toggleCodeEditor() { 
+            const isHidden = UI.codeOverlay.classList.contains('hidden-ui'); 
+            if (isHidden) { 
+                if(!UI.codeArea.value) UI.codeArea.value = document.documentElement.outerHTML;
+                UI.codeOverlay.classList.remove('hidden-ui'); 
+                UI.codeOverlay.classList.add('active'); 
+                // Sync settings if available
+                if(ghSessionToken) UI.ghTokenInput.value = ghSessionToken;
+                if(ghSessionOwner) UI.ghOwner.value = ghSessionOwner;
+                if(ghSessionRepo) UI.ghRepo.value = ghSessionRepo;
+                setTimeout(runCode, 500); 
+            } else { 
+                UI.codeOverlay.classList.add('hidden-ui'); 
+                UI.codeOverlay.classList.remove('active'); 
+            } 
         }
-
-        async function wizardNextStep() {
+        
+        function toggleRepoSettings() { 
             const panel = document.getElementById('ide-repo-settings');
-            const tokenInput = document.getElementById('gh-token');
-            
-            // 3. Show Advanced Settings and Focus Token Field
-            panel.innerHTML = `
-                <div class="col-span-2 md:col-span-4 mt-2 pt-2 border-t border-white/10 flex justify-between items-center">
-                    <div class="text-[10px] text-gray-400 font-bold uppercase">Ready to Deploy</div>
-                    <button onclick="toggleRepoSettings()" class="text-[9px] text-cyan-400 hover:text-white transition-colors">Show Advanced Settings</button>
-                </div>
-                <div class="mt-4 p-3 bg-purple-900/10 border border-purple-500/30 rounded-lg text-center">
-                    <p class="text-sm text-gray-200 mb-2">1. Paste your generated Token below.</p>
-                    <p class="text-sm text-gray-200 mb-4">2. Enter Owner (username).</p>
-                    <p class="text-sm text-gray-200 mb-4">3. Enter Repo Name.</p>
-                </div>
-            `;
-            
-            panel.classList.remove('hidden-ui');
-            panel.classList.add('flex-ui');
-            
-            if(tokenInput) tokenInput.focus();
-        }
-
-        // REPLACE THE EXISTING "pushToRepo" WITH THE FIXED VERSION
-        async function pushToRepoFixed() {
-            // Check for prepared Copilot artifact
-            const preparedArtifact = localStorage.getItem('nexus_deploy_artifact');
-            let contentToPush = null;
-            let sourceType = "current source";
-
-            if (preparedArtifact) {
-                contentToPush = preparedArtifact;
-                sourceType = "fixed artifact";
+            // If we have a token, show simple inputs. If not, show OAuth hint.
+            if (ghSessionToken) {
+                panel.classList.remove('hidden-ui');
             } else {
-                // Fallback to current HTML
-                contentToPush = document.documentElement.outerHTML;
-                sourceType = "current source";
-            }
-
-            const token = UI.ghTokenInput.value.trim() || ghToken; 
-            const owner = UI.ghOwner.value.trim(); 
-            const repo = UI.ghRepo.value.trim(); 
-            
-            if(!token || !owner || !repo) { 
-                alert("Please configure Repo Settings (Token, Owner, Repo) first."); 
-                showDeploymentWizard(); // Open Wizard for help
-                return; 
-            }
-
-            try {
-                // 1. Check SHA
-                let sha = currentFileSHA;
-                if(!sha) {
-                    const checkRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/index.html`, { headers: { 'Authorization': `token ${token}` } });
-                    if(checkRes.ok) { const data = await checkRes.json(); sha = data.sha; currentFileSHA = sha; } 
-                }
-
-                // 2. Push
-                const encodedContent = btoa(unescape(encodeURIComponent(contentToPush))); 
-                const message = `Deploy Nexus AI Build [${new Date().toISOString()}]`;
-                const payload = { message: message, content: encodedContent, sha: sha };
-                
-                const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/index.html`, {
-                    method: 'PUT', 
-                    headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' }, 
-                    body: JSON.stringify(payload)
-                });
-
-                if (res.ok) {
-                    const data = await res.json();
-                    addSystemMessage(`> Deployment Successful! (Source: ${sourceType})`, "success");
-                    addSystemMessage(`Commit: ${data.commit.sha.substring(0,7)}`, "info");
-                    addSystemMessage(`Live URL: https://${owner}.github.io/${repo}/`, "info");
-                    
-                    // Cleanup
-                    if (sourceType === "fixed artifact") {
-                        localStorage.removeItem('nexus_deploy_artifact');
-                        VFS.build_artifact = null;
-                    }
-                    
-                    // Update Button
-                    const btnText = document.querySelector('#ide-repo-settings button[onclick="pushToRepo()"] span');
-                    if(btnText) btnText.innerText = "COMMIT & PUSH";
-
-                } else { 
-                    const err = await res.json(); 
-                    throw new Error(err.message); 
-                }
-            } catch (e) { 
-                addSystemMessage(`Deployment Failed: ${e.message}`, "error"); 
-                const btnText = document.querySelector('#ide-repo-settings button[onclick="pushToRepo()"] span');
-                if(btnText) btnText.innerText = "COMMIT & PUSH";
+                // If no token, guide user to the deployment wizard instead of raw settings
+                panel.innerHTML = `
+                    <div class="p-4 bg-black/50 border border-purple-500/30 rounded-lg">
+                        <div class="text-white text-center mb-4">
+                            <h3 class="font-bold text-lg mb-2">🚀 Deployment Wizard</h3>
+                            <p class="text-sm text-gray-400">Connect to GitHub to enable One-Click Deploy.</p>
+                            <button onclick="startGitHubOAuth()" class="w-full bg-white text-black font-bold py-3 rounded hover:bg-gray-200 transition">
+                                Connect with GitHub
+                            </button>
+                            <p class="text-[10px] text-gray-500 mt-2">No CLI tools required. Uses Direct API.</p>
+                            <div class="mt-4 border-t border-white/10 pt-4">
+                                <button onclick="toggleRepoSettings()" class="text-xs text-purple-400 underline">Show Advanced Settings</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                panel.classList.remove('hidden-ui');
             }
         }
-
-        // ... (Ensure you keep the existing UI functions and other code blocks)
-        // The global 'pushToRepo' must be reassigned to 'pushToRepoFixed'
-        pushToRepo = pushToRepoFixed;
 
         /* --- THE CORE PUSH LOGIC (SIMPLIFIED) --- */
         
