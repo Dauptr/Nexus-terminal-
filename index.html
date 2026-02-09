@@ -1688,77 +1688,130 @@
         function addLocalVideo(stream) { const div = document.createElement('div'); div.id = "vid-local"; div.className = "video-container local"; div.innerHTML = `<video autoplay muted playsinline></video><div class="remote-label" style="color:#00e5ff">ME</div>`; div.querySelector('video').srcObject = stream; UI.videoGrid.appendChild(div); UI.videoGrid.classList.remove('hidden'); }
         function broadcastWebRTCSignal(signalType, payload) { if (mqttClient && mqttClient.isConnected()) { const topic = currentRoom === "public" ? "termos/public" : `termos/rooms/${currentRoom}`; const msgPayload = { user: userProfile.name, type: 'webrtc', signal: signalType, payload: payload }; const msg = new Paho.MQTT.Message(JSON.stringify(msgPayload)); msg.destinationName = topic; mqttClient.send(msg); } }
 
-        /* --- IDE & DEVOPS --- */
-        function toggleCodeEditor() { const isHidden = UI.codeOverlay.classList.contains('hidden-ui'); if (isHidden) { if(!UI.codeArea.value) UI.codeArea.value = document.documentElement.outerHTML; UI.codeOverlay.classList.remove('hidden-ui'); UI.codeOverlay.classList.add('active'); setTimeout(runCode, 500); } else { UI.codeOverlay.classList.add('hidden-ui'); UI.codeOverlay.classList.remove('active'); } }
-        function toggleRepoSettings() { UI.repoSettings.classList.toggle('hidden-ui'); }
-        function runCode() { const code = UI.codeArea.value; const doc = UI.previewFrame.contentDocument || UI.previewFrame.contentWindow.document; doc.open(); doc.write(code); doc.close(); }
+                /* --- STREAMLINED IDE & DEVOPS --- */
+        
+        // Store Token securely in memory for session (optional to save to localStorage if user wants)
+        let ghSessionToken = localStorage.getItem('nexus_gh_token') || null;
+        let ghSessionOwner = localStorage.getItem('nexus_gh_owner') || null;
+        let ghSessionRepo = localStorage.getItem('nexus_gh_repo') || null;
 
-        async function triggerAutoFix() {
-            const code = UI.codeArea.value; if(!code) return;
-            UI.copilotStatus.innerText = t('copilotThinking');
-            const thinkingDiv = document.createElement('div'); thinkingDiv.className = "text-[10px] text-cyan-400 italic mb-2 animate-pulse"; thinkingDiv.innerText = "Analyzing & Patching..."; thinkingDiv.id = "copilot-thinking"; UI.copilotChatLog.appendChild(thinkingDiv);
-            UI.copilotChatLog.scrollTop = UI.copilotChatLog.scrollHeight;
-            try {
-                const messages = [{ role: "system", content: "You are an expert developer. Analyze code. Fix all bugs, improve syntax, and ensure it works perfectly. Return ONLY complete corrected HTML/JS code inside a single code block. Do not add explanations outside code block." }, { role: "user", content: `Code:\n${code.substring(0, 4000)}` }];
-                const reply = await safeFetch(messages);
-                const codeMatch = reply.match(/```(?:html)?([\s\S]*?)```/);
-                const cleanCode = codeMatch ? codeMatch[1].trim() : reply;
-                UI.codeArea.value = cleanCode; runCode();
-                const successMsg = document.createElement('div'); successMsg.className = "text-[10px] text-green-400 font-bold mb-2 border-l-2 border-green-500 pl-2"; successMsg.innerText = "✅ " + t('patchApplied'); UI.copilotChatLog.appendChild(successMsg);
-            } catch(e) { const errDiv = document.createElement('div'); errDiv.className = "text-[10px] text-red-400 mb-2"; errDiv.innerText = "Fix Error: " + e.message; UI.copilotChatLog.appendChild(errDiv); } finally { const tEl = document.getElementById('copilot-thinking'); if(tEl) tEl.remove(); UI.copilotStatus.innerText = "READY"; UI.copilotChatLog.scrollTop = UI.copilotChatLog.scrollHeight; }
+        function toggleCodeEditor() { 
+            const isHidden = UI.codeOverlay.classList.contains('hidden-ui'); 
+            if (isHidden) { 
+                if(!UI.codeArea.value) UI.codeArea.value = document.documentElement.outerHTML;
+                UI.codeOverlay.classList.remove('hidden-ui'); 
+                UI.codeOverlay.classList.add('active'); 
+                // Sync settings if available
+                if(ghSessionToken) UI.ghTokenInput.value = ghSessionToken;
+                if(ghSessionOwner) UI.ghOwner.value = ghSessionOwner;
+                if(ghSessionRepo) UI.ghRepo.value = ghSessionRepo;
+                setTimeout(runCode, 500); 
+            } else { 
+                UI.codeOverlay.classList.add('hidden-ui'); 
+                UI.codeOverlay.classList.remove('active'); 
+            } 
+        }
+        
+        function toggleRepoSettings() { 
+            const panel = document.getElementById('ide-repo-settings');
+            
+            if (panel.classList.contains('hidden-ui')) {
+                panel.classList.remove('hidden-ui');
+                panel.classList.add('flex-ui');
+                
+                // Sync settings if available
+                if(ghSessionToken) UI.ghTokenInput.value = ghSessionToken;
+                if(ghSessionOwner) UI.ghOwner.value = ghSessionOwner;
+                if(ghSessionRepo) UI.ghRepo.value = ghSessionRepo;
+            } else {
+                panel.classList.add('hidden-ui');
+                panel.classList.remove('flex-ui');
+            }
         }
 
-        async function askCopilot() {
-            const query = UI.copilotInput.value.trim(); const code = UI.codeArea.value; if(!query) return;
-            UI.copilotInput.value = ''; UI.copilotStatus.innerText = t('copilotThinking');
-            const userMsg = document.createElement('div'); userMsg.className = "text-right text-[10px] mb-1 text-cyan-300 font-mono"; userMsg.innerText = `> ${query}`; UI.copilotChatLog.appendChild(userMsg);
-            const thinkingDiv = document.createElement('div'); thinkingDiv.className = "text-[10px] text-gray-500 italic mb-2 animate-pulse"; thinkingDiv.innerText = "Thinking..."; thinkingDiv.id = "copilot-thinking"; UI.copilotChatLog.appendChild(thinkingDiv);
-            UI.copilotChatLog.scrollTop = UI.copilotChatLog.scrollHeight;
-            try {
-                const messages = [{ role: "system", content: "You are Copilot embedded in Nexus. Analyze HTML/JS/CSS. Be concise." }, { role: "user", content: `User Question: ${query}\n\nCode:\n${code.substring(0, 3000)}...` }];
-                const reply = await safeFetch(messages);
-                const aiMsg = document.createElement('div'); aiMsg.className = "text-[10px] mb-2 text-gray-300 border-l-2 border-cyan-500 pl-2 markdown-body"; aiMsg.innerHTML = marked.parse(reply); UI.copilotChatLog.appendChild(aiMsg);
-            } catch (e) { const errDiv = document.createElement('div'); errDiv.className = "text-[10px] text-red-400 mb-2"; errDiv.innerText = "Error: " + e.message; UI.copilotChatLog.appendChild(errDiv); } finally { const tEl = document.getElementById('copilot-thinking'); if(tEl) tEl.remove(); UI.copilotStatus.innerText = "READY"; UI.copilotChatLog.scrollTop = UI.copilotChatLog.scrollHeight; }
-        }
-
-        async function installRepo() {
-            const repoRef = UI.loadRepoInput.value.trim(); if(!repoRef) return;
-            const parts = repoRef.split('/'); if(parts.length < 2) { addSystemMessage("Invalid format. Use owner/repo", "error"); return; }
-            const owner = parts[0]; const repo = parts[1];
-            try {
-                const repoRes = await fetchWithTimeout(`https://api.github.com/repos/${owner}/${repo}`); if(!repoRes.ok) throw new Error("Repo not found");
-                const repoData = await repoRes.json(); const defaultBranch = repoData.default_branch || 'main';
-                const filesToTry = ['index.html', 'index.htm', 'README.md', 'main.js']; let loaded = false;
-                for(let file of filesToTry) {
-                    const res = await fetchWithTimeout(`https://api.github.com/repos/${owner}/${repo}/contents/${file}?ref=${defaultBranch}`);
-                    if(res.ok) { const data = await res.json(); if(data.content) {
-                        const content = decodeURIComponent(escape(atob(data.content))); UI.codeArea.value = content; UI.shaDisplay.innerText = `SHA: ${data.sha.substring(0,7)}`; currentFileSHA = data.sha;
-                        UI.ghOwner.value = owner; UI.ghRepo.value = repo; UI.ghPath.value = file; addSystemMessage(`Installed: ${file} from ${owner}/${repo}`, "info"); runCode(); loaded = true; break;
-                    }}
-                }
-                if(!loaded) throw new Error("Could not find a supported file");
-            } catch(e) { addSystemMessage("Install Error: " + e.message, "error"); }
-        }
-
+        /* --- ATOMIC DEPLOYMENT LOGIC --- */
+        
         async function pushToRepo() {
-            const token = UI.ghTokenInput.value.trim() || ghToken; const owner = UI.ghOwner.value.trim(); const repo = UI.ghRepo.value.trim(); const path = UI.ghPath.value.trim() || 'index.html';
-            if(!token || !owner || !repo) { alert("Please configure Repo Settings (Token, Owner, Repo) first."); toggleRepoSettings(); return; }
-            const content = UI.codeArea.value; const encodedContent = btoa(unescape(encodeURIComponent(content))); const message = `Update ${path} via Nexus`;
+            // 1. Check if we have credentials
+            const token = ghSessionToken || document.getElementById('gh-token').value.trim(); 
+            const owner = ghSessionOwner || document.getElementById('gh-owner').value.trim(); 
+            const repo = ghSessionRepo || document.getElementById('gh-repo').value.trim(); 
+            const path = 'index.html';
+
+            if(!token) {
+                alert("Deployment Error: GitHub Token is required.\n\nPlease click 'Connect with GitHub' or configure token manually.");
+                toggleRepoSettings();
+                return;
+            }
+            if(!owner || !repo) {
+                alert("Deployment Error: Owner and Repo Name are required.");
+                return;
+            }
+
+            // 2. Prepare Content (Inject Timestamp to ensure GitHub sees it as an Update)
+            const content = document.documentElement.outerHTML;
+            const injectString = `\n<!-- ATOMIC UPDATE: ${new Date().toISOString()} -->`;
+            const patchedContent = content + injectString;
+            
+            // 3. UI Feedback
+            const btnText = document.querySelector('#ide-repo-settings button[onclick="pushToRepo()"] span');
+            if(btnText) btnText.innerText = "ATOMIC UPDATE...";
+            
+            addSystemMessage(`Updating ${owner}/${repo}/index.html...`, "info");
+
             try {
-                let sha = currentFileSHA; if(!sha) {
-                    const checkRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, { headers: { 'Authorization': `token ${token}` } });
-                    if(checkRes.ok) { const data = await checkRes.json(); sha = data.sha; } else if(checkRes.status === 404) { sha = null; } else { throw new Error("Failed to check file status"); }
+                // 4. Get SHA
+                let sha = currentFileSHA;
+                if(!sha) {
+                    const checkRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, { 
+                        headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' } 
+                    });
+                    if(checkRes.ok) { 
+                        const data = await checkRes.json(); 
+                        sha = data.sha; 
+                        currentFileSHA = sha; 
+                    } else if(checkRes.status === 404) {
+                        sha = null; 
+                    }
                 }
-                const payload = { message: message, content: encodedContent, sha: sha };
-                const res = await fetchWithTimeout(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
-                    method: 'PUT', headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' }, body: JSON.stringify(payload)
-                }, 15000);
+
+                // 5. Push (Atomic Update)
+                const encodedContent = btoa(unescape(encodeURIComponent(patchedContent))); 
+                const message = `Atomic Update via Nexus AI [${new Date().toISOString()}]`;
+                
+                const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
+                    method: 'PUT', 
+                    headers: { 
+                        'Authorization': `token ${token}`, 
+                        'Accept': 'application/vnd.github.v3+json',
+                        'Content-Type': 'application/json'
+                    }, 
+                    body: JSON.stringify({ message, content: encodedContent, sha: sha })
+                });
+
                 if (res.ok) {
-                    const data = await res.json(); addSystemMessage(t('gistSuccess') + ` (Commit: ${data.commit.sha.substring(0,7)})`, "info"); currentFileSHA = data.content.sha; UI.shaDisplay.innerText = `SHA: ${currentFileSHA.substring(0,7)}`;
-                } else { const err = await res.json(); throw new Error(err.message); }
-            } catch (e) { addSystemMessage(t('gistError') + `: ${e.message}`, "error"); }
+                    const data = await res.json();
+                    addSystemMessage(`> Deployment Successful!`, "success");
+                    addSystemMessage(`Commit: ${data.commit.sha.substring(0,7)}`, "info");
+                    addSystemMessage(`Live URL: https://${owner}.github.io/${repo}/`, "info");
+                    
+                    // Update SHA locally for next run
+                    currentFileSHA = data.commit.sha;
+                } else { 
+                    const err = await res.json(); 
+                    throw new Error(err.message || `HTTP ${res.status}`); 
+                }
+            } catch (error) { 
+                addSystemMessage(`Deployment Failed: ${error.message}`, "error"); 
+                if(error.message && error.message.includes("too many files")) {
+                    addSystemMessage("⚠️ GitHub 100-File Limit detected. Please try again in a few minutes.", "warning");
+                }
+            } finally {
+                if(btnText) btnText.innerText = "ATOMIC UPDATE";
+            }
         }
 
+        // ... (Keep all existing code below this point) ...
         /* --- CANVAS PERFORMANCE --- */
         let animationFrameId;
         function initGalaxy() {
