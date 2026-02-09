@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>NEXUS AI // FULL STACK</title>
+    <title>NEXUS AI // FULL STACK (FINAL BUILD)</title>
     
     <!-- PWA / METADATA -->
     <meta name="theme-color" content="#000000">
@@ -23,7 +23,7 @@
         :root {
             --glass-bg: rgba(10, 10, 15, 0.85);
             --glass-border: rgba(0, 229, 255, 0.3);
-            --accent-primary: #00e5ff;
+            --accent-primary: #00e5ff; /* Cyan */
             --accent-secondary: #0077ff;
             --msg-user-bg: linear-gradient(135deg, #00e5ff 0%, #0077ff 100%);
             --safe-bottom: env(safe-area-inset-bottom, 20px);
@@ -189,16 +189,24 @@
         .pg-history-item img { width: 100%; height: 100%; object-fit: cover; }
         .pg-history-item:hover { border-color: #00e5ff; transform: translateY(-2px); }
 
-        /* --- TERMINAL STYLES --- */
-        #terminal-overlay { position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.95); display: none; flex-direction: column; font-mono: var(--font-mono); }
+        /* --- TERMINAL STYLES (ENHANCED) --- */
+        #terminal-overlay { position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.98); display: none; flex-direction: column; font-mono: var(--font-mono); }
         #terminal-overlay.active { display: flex; }
         
         .term-line { margin-bottom: 2px; white-space: pre-wrap; word-break: break-all; }
-        .term-success { color: #22c55e; }
-        .term-error { color: #ef4444; }
+        .term-success { color: #22c55e; text-shadow: 0 0 5px rgba(34, 197, 94, 0.4); }
+        .term-error { color: #ef4444; text-shadow: 0 0 5px rgba(239, 68, 68, 0.4); }
         .term-warning { color: #fbbf24; }
         .term-info { color: #3b82f6; }
         
+        /* CRT Effect */
+        .crt-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0) 50%);
+            background-size: 100% 4px;
+            pointer-events: none; z-index: 10000; opacity: 0.08;
+        }
+
         #terminal-output::-webkit-scrollbar { width: 8px; }
         #terminal-output::-webkit-scrollbar-track { background: #000; }
         #terminal-output::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
@@ -212,9 +220,9 @@
     <!-- BOOT SCREEN -->
     <div id="boot-screen">
         <div class="loader-ring mb-8"></div>
-        <h1 class="text-4xl font-header text-white tracking-[0.3em] animate-pulse drop-shadow-[0_0_20px_rgba(0,229,255,1)]">NEXUS <span class="text-cyan-500">AI</span></h1>
+        <h1 id="boot-title" class="text-4xl font-header text-white tracking-[0.3em] animate-pulse drop-shadow-[0_0_20px_rgba(0,229,255,1)]"></h1>
         <div class="mt-6 font-mono text-xs text-cyan-400 flex gap-2 items-center" id="boot-text">
-            <span class="w-2 h-2 bg-cyan-400 rounded-full animate-ping"></span> <span id="txt-init">INITIALIZING NEURAL NETWORK...</span>
+            <span class="w-2 h-2 bg-cyan-400 rounded-full animate-ping"></span> <span id="txt-init" class="h-4"></span>
         </div>
     </div>
 
@@ -243,8 +251,8 @@
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
             </button>
             
-            <!-- NEW TERMINAL BUTTON -->
-            <button onclick="toggleTerminal()" class="hidden sm:flex bg-gray-800/50 hover:bg-gray-700/80 text-green-300 border border-green-500/30 px-3 py-1.5 rounded-full text-[10px] font-bold transition-all hover:shadow-[0_0_15px_rgba(34,197,94,0.3)]">
+            <!-- TERMINAL BUTTON -->
+            <button onclick="toggleTerminal()" class="hidden sm:flex bg-gray-800/50 hover:bg-gray-700/80 text-green-300 border border-green-500/30 px-3 py-1.5 rounded-full text-[10px] font-bold transition-all hover:shadow-[0_0_15px_rgba(34,197,94,0.3)] items-center gap-2">
                 💻 <span id="btn-terminal">TERMINAL</span>
             </button>
 
@@ -256,11 +264,11 @@
             <button onclick="NX.toggleOverlay()" class="hidden sm:flex bg-cyan-900/30 hover:bg-cyan-900/50 text-cyan-300 border border-cyan-500/30 px-3 py-1.5 rounded-full text-[10px] font-bold transition-all shadow-[0_0_10px_rgba(0,229,255,0.2)]">🎮 ENGINE</button>
             
             <button onclick="shareApp()" class="p-2 rounded-full hover:bg-white/10 text-cyan-300 transition-colors glitch-hover hidden sm:flex" title="Airdrop / Share App">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684l-1.1 1.1m.758-4.899a4 4 0 00-5.656 0l4-4a4 4 0 00-5.656-5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1z"></path></svg>
             </button>
 
             <button onclick="copySystemLog()" class="hidden sm:flex bg-white/5 hover:bg-white/10 text-gray-300 border border-white/10 px-3 py-1.5 rounded-full text-[10px] font-bold transition-all items-center gap-1 hover:border-cyan-500/50 hover:text-white" title="Export System Log">
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 002-2v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002 2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 002 2v1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
                 <span id="btn-copy-log">COPY LOG</span>
             </button>
 
@@ -632,8 +640,11 @@
         </div>
     </div>
 
-    <!-- NEXUS SYSTEM TERMINAL OVERLAY -->
+    <!-- NEXUS SYSTEM TERMINAL OVERLAY (FINAL POLISH) -->
     <div id="terminal-overlay">
+        <!-- CRT Overlay Effect -->
+        <div class="crt-overlay"></div>
+
         <div class="flex items-center justify-between px-4 py-2 bg-[#111] border-b border-green-500/30">
             <div class="flex items-center gap-2">
                 <div class="w-3 h-3 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_#22c55e]"></div>
@@ -799,7 +810,7 @@
         function runVariation() { PG.generate((p) => `${p}, different angle, variation, cinematic lighting`); }
         function runZoomOut() { PG.generate((p) => `wide angle shot, zoomed out, see surroundings, background details, ${p}`); }
 
-        /* --- REAL NEXUS SYSTEM TERMINAL ENGINE --- */
+        /* --- REAL NEXUS SYSTEM TERMINAL ENGINE (FINAL POLISH) --- */
         const VFS = {
             'index.html': document.documentElement.outerHTML,
             'package.json': JSON.stringify({ name: "nexus-ai", version: "1.0.0" }, null, 2),
@@ -817,7 +828,8 @@
                 el.classList.toggle('active');
                 if(el.classList.contains('active')) {
                     document.getElementById('term-input').focus();
-                    this.print("Nexus System Online.", "info");
+                    // Add boot log effect on open
+                    this.print("Nexus OS Online. v3.0", "info");
                 }
             },
 
@@ -858,6 +870,7 @@
                         this.print("  npm install             Install build tools");
                         this.print("  npm run build           Minify & Optimize build");
                         this.print("  npm run deploy / deploy  Push build to GitHub");
+                        this.print("  download                Download current build artifact");
                         this.print("  status                  System & Repo status");
                         this.print("  clear                   Clear terminal screen");
                         this.print("  exit                    Close terminal", "warning");
@@ -889,9 +902,11 @@
                         if(args[0] === 'install') this.runRealNpmInstall();
                         else if (args[0] === 'run' && args[1] === 'build') this.runRealBuild();
                         else if (args[0] === 'run' && args[1] === 'deploy') this.runRealDeploy();
+                        else if (args[0] === 'run' && args[1] === 'download') this.downloadArtifact();
                         else this.print(`npm: command '${args.join(' ')}' not recognized`, "error");
                         break;
                     case 'deploy': this.runRealDeploy(); break;
+                    case 'download': this.downloadArtifact(); break;
                     case 'status': this.runStatus(); break;
                     case '': break;
                     default: this.print(`Command not found: ${cmd}`, "error");
@@ -931,13 +946,19 @@
                 await new Promise(r => setTimeout(r, 500));
                 if(!VFS['index.html'].includes('<!DOCTYPE html>')) this.print("Warning: Missing Doctype.", "warning");
                 
-                this.print("> Minifying CSS/JS assets...");
-                await new Promise(r => setTimeout(r, 1000));
+                this.print("> Optimizing Assets...", "info");
                 
-                this.print(">> Build Success!", "success");
-                const originalSize = VFS['index.html'].length;
-                VFS.build_artifact = VFS['index.html']; // Simulated artifact
+                // SIMULATED MINIFICATION (Polish)
+                // Remove comments to reduce size
+                const rawHtml = VFS['index.html'];
+                const minified = rawHtml.replace(/<!--[\s\S]*?-->/g, "").replace(/\n\s+/g, " ");
+                
+                this.print(">> Build Success! (Minified)", "success");
+                const originalSize = rawHtml.length;
+                const minSize = minified.length;
+                VFS.build_artifact = minified; 
                 this.print(`Original: ${(originalSize/1024).toFixed(2)} KB`, "info");
+                this.print(`Optimized: ${(minSize/1024).toFixed(2)} KB`, "success");
                 this.print("Artifacts ready for deployment.", "info");
             },
 
@@ -965,14 +986,23 @@
                         let sha = currentFileSHA;
                         if(!sha) {
                             const checkRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, { headers: { 'Authorization': `token ${token}` } });
-                            if(checkRes.ok) { const data = await checkRes.json(); sha = data.sha; currentFileSHA = sha; } 
+                            if(checkRes.ok) { 
+                                const data = await checkRes.json(); 
+                                sha = data.sha; 
+                                currentFileSHA = sha; 
+                            } 
                         }
                         this.print("> Uploading build artifact...");
                         const content = VFS.build_artifact;
                         const encodedContent = btoa(unescape(encodeURIComponent(content))); 
                         const payload = { message: `Deploy Nexus AI Build [${new Date().toISOString()}]`, content: encodedContent, sha: sha };
                         const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
-                            method: 'PUT', headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' }, body: JSON.stringify(payload)
+                            method: 'PUT', 
+                            headers: { 
+                                'Authorization': `token ${token}`, 
+                                'Accept': 'application/vnd.github.v3+json' 
+                            }, 
+                            body: JSON.stringify(payload)
                         });
                         if(!res.ok) {
                             const err = await res.json();
@@ -990,9 +1020,27 @@
                 this.print("SYSTEM STATUS", "info");
                 this.print(`  Platform: Browser (WebAssembly Ready)`);
                 this.print(`  VFS Files: ${Object.keys(VFS).length}`);
-                this.print(`  Build Artifact: ${VFS.build_artifact ? "Ready" : "Pending"}`, VFS.build_artifact ? "success" : "warning");
+                this.print(`  Build Artifact: ${VFS.build_artifact ? "Ready (" + ((VFS.build_artifact.length/1024).toFixed(2)) + " KB)" : "Pending"}`, VFS.build_artifact ? "success" : "warning");
                 const token = document.getElementById('gh-token').value;
                 this.print(`  GitHub Token: ${token ? "Configured" : "Missing"}`, token ? "success" : "error");
+            },
+
+            downloadArtifact: function() {
+                if(!VFS.build_artifact) {
+                    this.print("No artifact built. Run 'npm run build' first.", "warning");
+                    return;
+                }
+                try {
+                    const blob = new Blob([VFS.build_artifact], { type: 'text/html' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'build.html';
+                    a.click();
+                    this.print(">> Downloading build.html...", "success");
+                } catch(e) {
+                    this.print("Download failed: " + e.message, "error");
+                }
             }
         };
 
@@ -1236,9 +1284,27 @@
             document.addEventListener('visibilitychange', () => { isTabActive = !document.hidden; });
             document.getElementById('lang-select').value = currentLang; UI.providerSelect.value = currentProvider; UI.ghTokenInput.value = ghToken; document.getElementById('pollinations-img-model').value = currentImgModel;
             updateProviderSettings(); applyLanguageToDOM(); AudioFX.boot();
-            setTimeout(() => {
-                UI.boot.style.opacity = '0'; setTimeout(() => { UI.boot.remove(); initGalaxy(); startSystem(); }, 800);
-            }, 1500);
+            
+            // TYPEWRITER EFFECT FOR BOOT SCREEN
+            const bootText = document.getElementById('txt-init');
+            const bootFullText = t('init');
+            let charIndex = 0;
+            bootText.innerHTML = '';
+            const typeInterval = setInterval(() => {
+                if(charIndex < bootFullText.length) {
+                    bootText.innerHTML += bootFullText.charAt(charIndex);
+                    charIndex++;
+                } else {
+                    clearInterval(typeInterval);
+                    setTimeout(() => {
+                        UI.boot.style.opacity = '0';
+                        setTimeout(() => { UI.boot.remove(); initGalaxy(); startSystem(); }, 800);
+                    setTimeout(() => {
+                        document.getElementById('boot-title').innerText = "NEXUS AI"; // Reset title after boot
+                    }, 500);
+                }, 500);
+            }, 50);
+
             UI.sendBtn.addEventListener('click', handleInput);
             UI.input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); handleInput(); } });
             document.getElementById('avatar-upload').addEventListener('change', handleAvatarUpload);
@@ -1361,8 +1427,21 @@
             div.className = "flex gap-3 my-2 msg-anim";
             const label = overrideUrl ? "PLAYGROUND A GENERATED" : "NEURAL IMAGERY GENERATED";
             const borderColor = "border-purple-500/30";
-            div.innerHTML = `<div class="w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-xs font-bold text-white shadow-lg ring-1 ring-white/20 shrink-0 border border-purple-400/50">IMG</div><div class="flex-1 bg-slate-900/80 backdrop-blur-md border ${borderColor} p-3 rounded-2xl rounded-tl-none text-sm text-gray-200 shadow-md"><div class="text-[10px] text-purple-400 font-mono mb-1 flex justify-between"><span>${label}</span><span class="text-green-400">${currentImgModel.toUpperCase()} MODEL</span></div><div class="generated-image-container"><img src="${objectUrl}" alt="${cleanPrompt}" loading="lazy"></div><div class="mt-2 text-[10px] text-gray-400 font-mono">"${cleanPrompt}"</div></div>`;
+            
+            // DOWNLOAD BUTTON IN CHAT
+            const downloadBtnHtml = `<button onclick="downloadImage('${objectUrl}')" class="mt-3 px-3 py-1.5 rounded bg-black/50 hover:bg-black/70 text-cyan-400 text-xs font-mono border border-cyan-500/30 transition-colors">💾 SAVE</button>`;
+
+            div.innerHTML = `<div class="w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-xs font-bold text-white shadow-lg ring-1 ring-white/20 shrink-0 border border-purple-400/50">IMG</div><div class="flex-1 bg-slate-900/80 backdrop-blur-md border ${borderColor} p-3 rounded-2xl rounded-tl-none text-sm text-gray-200 shadow-md"><div class="text-[10px] text-purple-400 font-mono mb-1 flex justify-between"><span>${label}</span><span class="text-green-400">${currentImgModel.toUpperCase()} MODEL</span></div><div class="generated-image-container"><img src="${objectUrl}" alt="${cleanPrompt}" loading="lazy"></div><div class="mt-2 text-[10px] text-gray-400 font-mono">"${cleanPrompt}"</div>${downloadBtnHtml}</div>`;
             appendToChat(div);
+        }
+
+        function downloadImage(url) {
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `nexus-ai-${Date.now()}.jpg`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
         }
 
         async function startGameCreator() { NX.toggleOverlay(); }
@@ -1395,6 +1474,7 @@
                 case '/kernel': triggerKernelThought(); break;
                 case '/video': toggleMedia(); break;
                 case '/playground': togglePlayground(); break;
+                case '/terminal': toggleTerminal(); break;
                 default: addSystemMessage(`Unknown: ${cmd}`, "warning"); AudioFX.error();
             }
         }
@@ -1518,7 +1598,11 @@
             mqttClient = new Paho.MQTT.Client(broker.host, broker.port, broker.path, clientId);
             mqttClient.onConnectionLost = (responseObject) => {
                 console.warn("Connection Lost:", responseObject.errorMessage);
-                if (responseObject.errorCode !== 0) { currentBrokerIdx = (currentBrokerIdx + 1) % availableBrokers.length; updateStatus(false); setTimeout(connectMQTT, 2000); }
+                if (responseObject.errorCode !== 0) {
+                    currentBrokerIdx = (currentBrokerIdx + 1) % availableBrokers.length;
+                    updateStatus(false);
+                    setTimeout(connectMQTT, 2000); 
+                }
             };
             mqttClient.onMessageArrived = (message) => {
                 try {
@@ -1563,7 +1647,8 @@
             const id = 'kernel-' + Date.now(); addThinking(id, "OS"); AudioFX.system();
             try {
                 const messages = [{ role: "system", content: `You are Nexus Kernel. Time: ${new Date().toLocaleTimeString()}. Reply in ${currentLang}.` }, { role: "user", content: "System status." }];
-                const reply = await safeFetch(messages); removeThinking(id);
+                const reply = await safeFetch(messages);
+                removeThinking(id);
                 const div = document.createElement('div');
                 div.className = "flex gap-3 my-4 msg-anim border border-cyan-500/30 bg-cyan-900/10 p-4 rounded-xl relative overflow-hidden backdrop-blur-md";
                 div.innerHTML = `<div class="absolute top-0 left-0 w-1 h-full bg-cyan-500 shadow-[0_0_10px_#00e5ff]"></div><div class="relative z-10"><div class="text-[10px] text-cyan-400 font-bold tracking-widest mb-2">KERNEL_THOUGHT.EXE</div><div class="text-sm text-gray-200 font-light leading-relaxed font-mono">${escapeHtml(reply)}</div></div>`;
@@ -1755,11 +1840,15 @@
             try {
                 let sha = currentFileSHA; if(!sha) {
                     const checkRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, { headers: { 'Authorization': `token ${token}` } });
-                    if(checkRes.ok) { const data = await checkRes.json(); sha = data.sha; } else if(checkRes.status === 404) { sha = null; } else { throw new Error("Failed to check file status"); }
+                    if(checkRes.ok) { 
+                        const data = await checkRes.json(); sha = data.sha; 
+                    } else if(checkRes.status === 404) { sha = null; } else { throw new Error("Failed to check file status"); }
                 }
                 const payload = { message: message, content: encodedContent, sha: sha };
                 const res = await fetchWithTimeout(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
-                    method: 'PUT', headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' }, body: JSON.stringify(payload)
+                    method: 'PUT', 
+                    headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' }, 
+                    body: JSON.stringify(payload)
                 }, 15000);
                 if (res.ok) {
                     const data = await res.json(); addSystemMessage(t('gistSuccess') + ` (Commit: ${data.commit.sha.substring(0,7)})`, "info"); currentFileSHA = data.content.sha; UI.shaDisplay.innerText = `SHA: ${currentFileSHA.substring(0,7)}`;
@@ -1775,29 +1864,7 @@
             const stars = Array(300).fill().map(() => ({ x: Math.random() * w, y: Math.random() * h, z: Math.random() * 2 + 0.5, o: Math.random(), s: Math.random() * 2 + 0.5, vx: (Math.random() - 0.5) * 0.2, vy: (Math.random() - 0.5) * 0.2 }));
             let mouseX = w / 2; let mouseY = h / 2;
             window.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
+            
             function draw() {
                 if (!isTabActive) { animationFrameId = requestAnimationFrame(draw); return; }
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.1)'; ctx.fillRect(0, 0, w, h);
-                stars.forEach((s, i) => {
-                    const dx = mouseX - s.x; const dy = mouseY - s.y; const dist = Math.sqrt(dx*dx + dy*dy);
-                    if(dist < 200) { s.x -= dx * 0.005; s.y -= dy * 0.005; }
-                    s.x += s.vx; s.y += s.vy;
-                    if (s.x < 0) s.x = w; if (s.x > w) s.x = 0; if (s.y < 0) s.y = h; if (s.y > h) s.y = 0;
-                    const size = s.s * (s.z); const opacity = s.o * 0.8;
-                    for(let j=i+1; j<stars.length; j++){
-                        const s2 = stars[j]; const dx2 = s.x - s2.x; const dy2 = s.y - s2.y; const dist2 = Math.sqrt(dx2*dx2 + dy2*dy2);
-                        if(dist2 < 80){
-                            ctx.beginPath(); ctx.strokeStyle = `rgba(0, 229, 255, ${0.15 * (1 - dist2/80)})`; ctx.lineWidth = 0.5; ctx.moveTo(s.x, s.y); ctx.lineTo(s2.x, s2.y); ctx.stroke();
-                        }
-                    }
-                    ctx.fillStyle = `rgba(0, 229, 255, ${opacity})`; if (Math.random() > 0.95) ctx.fillStyle = `rgba(34, 211, 238, ${opacity})`;
-                    ctx.beginPath(); ctx.arc(s.x, s.y, size, 0, Math.PI * 2); ctx.fill();
-                });
-                animationFrameId = requestAnimationFrame(draw);
-            }
-            if(animationFrameId) cancelAnimationFrame(animationFrameId); draw();
-            window.addEventListener('resize', () => { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; });
-        }
-    </script>
-</body>
-</html>
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.
