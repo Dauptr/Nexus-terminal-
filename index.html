@@ -2,1869 +2,516 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>NEXUS AI // FULL STACK (FINAL BUILD)</title>
-    
-    <!-- PWA / METADATA -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEXUS // ULTIMATE</title>
     <meta name="theme-color" content="#000000">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'><rect width='32' height='32' fill='%23000'/><circle cx='16' cy='16' r='10' fill='%2300e5ff'/><path d='M16 6v20M6 16h20' stroke='%23000' stroke-width='4'/></svg>">
-
-    <!-- LIBRARIES -->
+    
+    <!-- CORE -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Inter:wght@300;400;600&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    
+    <!-- BACKEND -->
+    <script>
+        window.Nexus = {
+            ready: false,
+            provider: localStorage.getItem('nexus_prov') || 'puter',
+            key: localStorage.getItem('nexus_key') || ''
+        };
+    </script>
+    <script src="https://js.puter.com/v2/" async onload="window.Nexus.ready = true" onerror="console.warn('Puter Blocked')"></script>
 
     <style>
         :root {
-            --glass-bg: rgba(10, 10, 15, 0.85);
-            --glass-border: rgba(0, 229, 255, 0.3);
-            --accent-primary: #00e5ff; /* Cyan */
-            --accent-secondary: #0077ff;
-            --msg-user-bg: linear-gradient(135deg, #00e5ff 0%, #0077ff 100%);
-            --safe-bottom: env(safe-area-inset-bottom, 20px);
-            --font-mono: 'Rajdhani', monospace;
-            --font-header: 'Orbitron', sans-serif;
-            --nx-border: #2a2f3a;
+            --bg-app: #050505;
+            --bg-panel: #0A0A0A;
+            --bg-surface: #111111;
+            --border: #222;
+            --text-main: #e0e0e0;
+            --text-muted: #666;
+            --accent: #8b5cf6; /* Violet */
+            --accent-glow: rgba(139, 92, 246, 0.2);
         }
-
-        body {
-            background: #000;
-            color: #e2e8f0;
-            font-family: 'Inter', sans-serif;
-            overflow: hidden; 
-            background: radial-gradient(circle at center, #0a1128 0%, #000000 100%);
-            height: 100dvh; 
-            width: 100vw;
-            touch-action: manipulation;
-            -webkit-font-smoothing: antialiased;
+        body { font-family: 'Inter', sans-serif; background: var(--bg-app); color: var(--text-main); height: 100vh; overflow: hidden; }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 2px; }
+        ::-webkit-scrollbar-thumb { background: #333; }
+        
+        /* Layout */
+        .app-grid { display: grid; grid-template-columns: 50px 1fr; height: 100%; }
+        
+        /* Sidebar */
+        .nav-icon { 
+            width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; 
+            color: #555; cursor: pointer; transition: all 0.2s; border-radius: 8px; font-lg;
         }
+        .nav-icon:hover { background: #111; color: #fff; }
+        .nav-icon.active { background: var(--accent-glow); color: var(--accent); box-shadow: 0 0 10px var(--accent-glow); }
 
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-thumb { background: var(--accent-primary); border-radius: 3px; box-shadow: 0 0 10px var(--accent-primary); }
-        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.5); }
-
-        /* Glassmorphism */
-        .glass-panel {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            box-shadow: 0 0 30px rgba(0, 229, 255, 0.1), inset 0 0 20px rgba(0,0,0,0.5);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .font-header { font-family: var(--font-header); letter-spacing: 0.1em; }
-        .font-mono { font-family: var(--font-mono); }
+        /* Editor */
+        .ide-grid { display: grid; grid-template-columns: 1fr 1fr 350px; height: 100%; background: #000; }
+        @media (max-width: 900px) { .ide-grid { grid-template-columns: 1fr; } .copilot-col { display: none; } }
+        .code-editor { font-family: 'JetBrains Mono', monospace; font-size: 13px; background: #0d1117; color: #c9d1d9; line-height: 1.5; resize: none; }
         
-        .input-glow:focus-within {
-            box-shadow: 0 0 25px rgba(0, 229, 255, 0.4), inset 0 0 15px rgba(0, 229, 255, 0.15);
-            border-color: rgba(0, 229, 255, 1);
-            background: rgba(0, 20, 40, 0.6);
-        }
-
-        /* Animations */
-        @keyframes scanline-move { 0% { background-position: 0 0; } 100% { background-position: 0 100%; } }
-        @keyframes slideUpFade { from { opacity: 0; transform: translateY(20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
-        @keyframes pulse-cyan { 0%, 100% { box-shadow: 0 0 5px var(--accent-primary); } 50% { box-shadow: 0 0 25px var(--accent-primary), 0 0 15px var(--accent-secondary); } }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        .scanlines {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-            background-size: 100% 4px, 3px 100%; pointer-events: none; z-index: 9998; opacity: 0.15; animation: scanline-move 10s linear infinite;
-        }
-        .msg-anim { animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        .active-ring { animation: pulse-cyan 2s infinite; }
-
-        /* Boot Screen */
-        #boot-screen { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 1s ease; }
-        .loader-ring { width: 100px; height: 100px; border: 4px solid #000; border-top: 4px solid var(--accent-primary); border-right: 4px solid var(--accent-secondary); border-radius: 50%; animation: spin 1s linear infinite; box-shadow: 0 0 20px rgba(0, 229, 255, 0.5); }
-
-        /* Media Deck */
-        .media-overlay { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(30px); width: 95%; max-width: 600px; z-index: 40; opacity: 0; pointer-events: none; transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
-        .media-overlay.active { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
+        /* Terminal */
+        .cli-output { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #22c55e; white-space: pre-wrap; }
         
-        /* Radio & Video */
-        .radio-genres { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; scrollbar-width: none; }
-        .genre-chip { white-space: nowrap; padding: 6px 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; font-size: 11px; color: #a5f3fc; cursor: pointer; transition: all 0.2s; font-family: var(--font-mono); text-transform: uppercase; }
-        .genre-chip:hover, .genre-chip.active { background: rgba(0, 229, 255, 0.2); border-color: #00e5ff; color: white; box-shadow: 0 0 15px rgba(0, 229, 255, 0.4); transform: translateY(-2px); }
-        .station-list { max-height: 250px; overflow-y: auto; margin-top: 12px; }
-        .station-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer; transition: background 0.2s; border-radius: 8px; }
-        .station-item:hover { background: rgba(255,255,255,0.05); }
-        .station-item.playing { background: rgba(0, 229, 255, 0.1); border-left: 3px solid #00e5ff; }
-        .video-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
-        .video-container { background: #000; border-radius: 12px; overflow: hidden; position: relative; aspect-ratio: 16/9; border: 1px solid rgba(0, 229, 255, 0.4); box-shadow: 0 0 15px rgba(0,0,0,0.5); }
-        .video-container.local { border-color: #00e5ff; box-shadow: 0 0 20px rgba(0, 229, 255, 0.3); }
-        video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+        /* Game Engine */
+        .engine-grid { display: grid; grid-template-columns: 240px 1fr; height: 100%; background: #000; }
+        canvas { background: #0a0a0a; cursor: crosshair; box-shadow: inset 0 0 20px rgba(0,0,0,0.8); border: 1px solid #111; }
 
-        /* IDE Styles */
-        #code-editor-overlay { position: fixed; inset: 0; z-index: 1000; background: rgba(0, 0, 0, 0.98); display: none; flex-direction: column; backdrop-filter: blur(15px); }
-        #code-editor-overlay.active { display: flex; }
-        .editor-body { display: grid; grid-template-columns: 1fr 1fr 350px; flex: 1; overflow: hidden; height: 100%; gap: 1px; background: #333; }
-        @media (max-width: 1024px) { .editor-body { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr 1fr; } #copilot-panel { border-top: 1px solid #333; border-left: none; } }
-        @media (max-width: 768px) { .editor-body { display: flex; flex-direction: column; } #code-area { flex: 0 0 45%; min-height: 250px; } #preview-area { flex: 1; border-top: 1px solid #333; } #copilot-panel { display: none; } }
-
-        .editor-col { background: #0d1117; display: flex; flex-direction: column; overflow: hidden; position: relative; }
-        #code-area { background: #0d1117; color: #c9d1d9; font-family: var(--font-mono); font-size: 13px; padding: 1.5rem; border: none; resize: none; outline: none; width: 100%; height: 100%; line-height: 1.6; }
-        #preview-area { background: #fff; position: relative; }
-        #preview-frame { width: 100%; height: 100%; border: none; }
+        /* Glass & Utils */
+        .glass-panel { background: rgba(10, 10, 10, 0.9); backdrop-filter: blur(10px); border: 1px solid var(--border); }
+        .input-dark { background: #000; border: 1px solid #222; color: #fff; outline: none; }
+        .input-dark:focus { border-color: var(--accent); }
         
-        #copilot-panel { background: #0d1117; border-left:1px solid #30363d; display: flex; flex-direction: column; }
-        .copilot-header { padding: 12px; border-bottom: 1px solid #30363d; background: rgba(0, 229, 255, 0.1); color: #00e5ff; font-size: 11px; font-bold; font-family: var(--font-header); display: flex; justify-content: space-between; align-items: center; letter-spacing: 1px; }
-        .copilot-chat { flex: 1; overflow-y: auto; padding: 12px; font-size: 12px; color: #c9d1d9; font-family: var(--font-mono); }
-        .copilot-input-area { padding: 12px; border-top: 1px solid #30363d; background: #050505; display: flex; gap: 8px; }
-        .copilot-input { flex: 1; background: #161b22; border: 1px solid #30363d; color: white; padding: 8px; border-radius: 6px; outline: none; font-family: var(--font-mono); font-size: 12px; }
-        .copilot-input:focus { border-color: #00e5ff; }
-
-        .markdown-body pre { background: #0d1117 !important; padding: 1em; border-radius: 8px; overflow-x: auto; margin: 10px 0; border: 1px solid #30363d; }
-
-        .hidden-ui { display: none !important; }
-        .flex-ui { display: flex !important; }
-        
-        .generated-image-container { position: relative; margin-top: 12px; border-radius: 12px; overflow: hidden; border: 1px solid #00e5ff; box-shadow: 0 0 25px rgba(0, 229, 255, 0.3); }
-        .generated-image-container img { width: 100%; display: block; animation: slideUpFade 0.5s ease-out; }
-        .image-gen-error { background: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; color: #fca5a5; padding: 1rem; border-radius: 8px; margin-top: 10px; font-size: 0.8rem; text-align: center; }
-
-        /* NEXUS ENGINE STYLES */
-        #nexus-engine-overlay { position: fixed; inset: 0; z-index: 2000; background: rgba(0,0,0,0.96); display: none; flex-direction: column; backdrop-filter: blur(10px); }
-        #nexus-engine-overlay.active { display: flex; }
-        
-        .nx-toolbar { height: 60px; background: #0f1115; border-bottom: 1px solid var(--nx-border); display: flex; align-items: center; padding: 0 20px; justify-content: space-between; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
-        .nx-title { font-weight: 900; color: var(--accent-primary); letter-spacing: 3px; font-family: var(--font-header); text-shadow: 0 0 10px rgba(0, 229, 255, 0.5); }
-
-        .nx-workspace { display: flex; flex: 1; overflow: hidden; height: calc(100vh - 60px); }
-        
-        .nx-sidebar { width: 300px; background: #0d0f12; border-right: 1px solid #333; display: flex; flex-direction: column; overflow-y: auto; }
-        .tool-section { padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .tool-title { font-size: 10px; text-transform: uppercase; color: #64748b; font-weight: bold; margin-bottom: 10px; letter-spacing: 1px; }
-        
-        .config-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .config-row label { font-size: 12px; color: #94a3b8; font-family: var(--font-mono); }
-        .nx-input { background: #1a1d26; border: 1px solid #333; color: #00e5ff; padding: 6px 10px; border-radius: 4px; width: 100px; font-size: 12px; font-family: var(--font-mono); outline: none; transition: border-color 0.2s; }
-        .nx-input:focus { border-color: #00e5ff; box-shadow: 0 0 10px rgba(0, 229, 255, 0.2); }
-
-        .nx-viewport { flex: 1; position: relative; display: flex; justify-content: center; align-items: center; background: #050505; overflow: hidden; }
-        canvas#nx-canvas { box-shadow: 0 0 40px rgba(0,0,0,0.8); border: 1px solid #333; cursor: crosshair; background-image: radial-gradient(#1a1d26 1px, transparent 1px); background-size: 20px 20px; }
-        
-        .nx-console-panel { width: 280px; background: #000; border-left: 1px solid #333; display: flex; flex-direction: column; font-family: var(--font-mono); font-size: 11px; }
-        .console-output { flex: 1; padding: 15px; overflow-y: auto; color: #22c55e; }
-        .console-output div { margin-bottom: 6px; word-break: break-all; text-shadow: 0 0 5px rgba(34, 197, 94, 0.4); }
-        .console-input-area { padding: 15px; border-top: 1px solid #333; background: #0a0a0a; display: flex; gap: 8px; }
-        .console-input { flex: 1; background: transparent; border: none; color: #22c55e; font-family: var(--font-mono); outline: none; }
-
-        .nx-btn { background: rgba(0, 229, 255, 0.1); color: #00e5ff; border: 1px solid rgba(0, 229, 255, 0.3); padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold; font-family: var(--font-header); text-transform: uppercase; transition: all 0.2s; }
-        .nx-btn:hover { background: rgba(0, 229, 255, 0.2); box-shadow: 0 0 15px rgba(0, 229, 255, 0.3); }
-        .nx-btn-primary { background: #00e5ff; color: #000; border: none; }
-        .nx-btn-primary:hover { background: #00c4d4; }
-        .nx-btn-danger { color: #ff2a6d; border-color: rgba(255, 42, 109, 0.3); background: transparent; }
-        .nx-btn-danger:hover { background: rgba(255, 42, 109, 0.1); box-shadow: 0 0 15px rgba(255, 42, 109, 0.2); }
-
-        .nx-status { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: #00e5ff; padding: 6px 16px; border-radius: 20px; font-size: 11px; font-family: var(--font-header); pointer-events: none; border: 1px solid rgba(0, 229, 255, 0.3); letter-spacing: 2px; z-index: 10; }
-
-        /* --- PLAYGROUND A STYLES --- */
-        #playground-overlay { position: fixed; inset: 0; z-index: 1900; background: rgba(0,0,0,0.95); display: none; flex-direction: column; backdrop-filter: blur(20px); }
-        #playground-overlay.active { display: flex; }
-
-        .pg-workspace { display: flex; height: 100%; overflow: hidden; }
-        
-        .pg-sidebar { width: 350px; background: #0d0f12; border-right: 1px solid #333; display: flex; flex-direction: column; z-index: 10; }
-        .pg-main { flex: 1; display: flex; flex-direction: column; background: #050505; position: relative; align-items: center; justify-content: center; }
-        
-        .pg-image-preview { max-width: 95%; max-height: 90%; border-radius: 8px; box-shadow: 0 0 50px rgba(0, 229, 255, 0.2); transition: transform 0.3s ease; border: 1px solid rgba(0, 229, 255, 0.1); }
-        .pg-image-preview:hover { transform: scale(1.01); border-color: rgba(0, 229, 255, 0.5); }
-
-        .pg-tool-btn { 
-            background: #161b22; border: 1px solid #30363d; color: #e2e8f0; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: all 0.2s; margin-bottom: 8px; width: 100%; font-family: var(--font-mono);
-        }
-        .pg-tool-btn:hover { background: #1f2937; border-color: #00e5ff; color: #00e5ff; }
-        .pg-tool-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-        .pg-history-item { width: 100%; aspect-ratio: 1; background: #000; border-radius: 6px; overflow: hidden; cursor: pointer; border: 1px solid #333; transition: all 0.2s; position: relative; }
-        .pg-history-item img { width: 100%; height: 100%; object-fit: cover; }
-        .pg-history-item:hover { border-color: #00e5ff; transform: translateY(-2px); }
-
-        /* --- TERMINAL STYLES (ENHANCED) --- */
-        #terminal-overlay { position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.98); display: none; flex-direction: column; font-mono: var(--font-mono); }
-        #terminal-overlay.active { display: flex; }
-        
-        .term-line { margin-bottom: 2px; white-space: pre-wrap; word-break: break-all; }
-        .term-success { color: #22c55e; text-shadow: 0 0 5px rgba(34, 197, 94, 0.4); }
-        .term-error { color: #ef4444; text-shadow: 0 0 5px rgba(239, 68, 68, 0.4); }
-        .term-warning { color: #fbbf24; }
-        .term-info { color: #3b82f6; }
-        
-        /* CRT Effect */
-        .crt-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0) 50%);
-            background-size: 100% 4px;
-            pointer-events: none; z-index: 10000; opacity: 0.08;
-        }
-
-        #terminal-output::-webkit-scrollbar { width: 8px; }
-        #terminal-output::-webkit-scrollbar-track { background: #000; }
-        #terminal-output::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
-        #terminal-output::-webkit-scrollbar-thumb:hover { background: #22c55e; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .anim { animation: fadeIn 0.3s ease-out; }
     </style>
 </head>
-<body class="h-screen w-screen flex flex-col relative select-none text-sm">
+<body>
 
-    <div class="scanlines"></div>
+    <!-- SIDEBAR -->
+    <div class="app-grid">
+        <aside class="bg-black border-r border-[#111] flex flex-col items-center py-2 gap-1">
+            <div class="w-8 h-8 rounded bg-violet-600 flex items-center justify-center text-white font-bold mb-4 shadow-lg shadow-violet-600/20">N</div>
+            
+            <div onclick="App.navigate('chat')" class="nav-icon active" title="Chat" id="nav-chat">💬</div>
+            <div onclick="App.navigate('ide')" class="nav-icon" title="IDE" id="nav-ide">💻</div>
+            <div onclick="App.navigate('terminal')" class="nav-icon" title="Terminal" id="nav-terminal">⌨️</div>
+            <div onclick="App.navigate('engine')" class="nav-icon" title="Engine" id="nav-engine">🎮</div>
+            <div onclick="App.navigate('playground')" class="nav-icon" title="Visuals" id="nav-playground">🎨</div>
+            <div onclick="App.navigate('radio')" class="nav-icon" title="Radio" id="nav-radio">📻</div>
+            
+            <div class="mt-auto flex flex-col gap-1">
+                <div onclick="App.navigate('settings')" class="nav-icon" title="Settings" id="nav-settings">⚙️</div>
+            </div>
+        </aside>
 
-    <!-- BOOT SCREEN -->
-    <div id="boot-screen">
-        <div class="loader-ring mb-8"></div>
-        <h1 id="boot-title" class="text-4xl font-header text-white tracking-[0.3em] animate-pulse drop-shadow-[0_0_20px_rgba(0,229,255,1)]"></h1>
-        <div class="mt-6 font-mono text-xs text-cyan-400 flex gap-2 items-center" id="boot-text">
-            <span class="w-2 h-2 bg-cyan-400 rounded-full animate-ping"></span> <span id="txt-init" class="h-4"></span>
-        </div>
-    </div>
-
-    <!-- BACKGROUND CANVAS -->
-    <canvas id="galaxy-canvas" class="fixed top-0 left-0 w-full h-full z-0 pointer-events-none"></canvas>
-
-    <!-- HEADER -->
-    <header class="fixed top-0 left-0 right-0 z-20 glass-panel border-b border-cyan-500/20 h-16 flex items-center justify-between px-4 lg:px-6 bg-black/80">
-        <div class="flex items-center gap-3">
-            <div class="relative w-10 h-10 flex items-center justify-center group cursor-pointer">
-                <div class="absolute inset-0 bg-cyan-600 rounded-lg blur opacity-40 group-hover:opacity-60 transition-opacity"></div>
-                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-600 to-blue-600 flex items-center justify-center border border-white/20 relative z-10 shadow-lg group-hover:scale-105 transition-transform">
-                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+        <!-- MAIN VIEW CONTAINER -->
+        <main id="main-container" class="relative overflow-hidden">
+            
+            <!-- 1. CHAT VIEW -->
+            <section id="view-chat" class="absolute inset-0 flex flex-col p-4 anim">
+                <div id="chat-log" class="flex-1 overflow-y-auto space-y-4 pr-4 pb-16">
+                    <div class="text-center text-gray-600 text-xs pt-20">Welcome to Nexus. AI Online.</div>
                 </div>
-            </div>
-            <div>
-                <h1 class="font-header font-bold text-lg tracking-wider text-white hidden sm:block">NEXUS <span class="text-cyan-400">AI</span></h1>
-                <div class="flex items-center gap-2 text-[10px] text-gray-400 font-mono mt-0.5">
-                    <div id="api-status-dot" class="w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_5px_red]"></div>
-                    <span id="room-display" class="cursor-pointer hover:text-white transition-colors" onclick="forceReconnect()">OFFLINE</span>
-                </div>
-            </div>
-        </div>
-        <div class="flex items-center gap-2">
-            <button onclick="toggleMedia()" class="p-2 rounded-full hover:bg-white/10 text-cyan-300 transition-colors glitch-hover" title="Media Deck">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-            </button>
-            
-            <!-- TERMINAL BUTTON -->
-            <button onclick="toggleTerminal()" class="hidden sm:flex bg-gray-800/50 hover:bg-gray-700/80 text-green-300 border border-green-500/30 px-3 py-1.5 rounded-full text-[10px] font-bold transition-all hover:shadow-[0_0_15px_rgba(34,197,94,0.3)] items-center gap-2">
-                💻 <span id="btn-terminal">TERMINAL</span>
-            </button>
-
-            <!-- PLAYGROUND A BUTTON -->
-            <button onclick="togglePlayground()" class="hidden sm:flex bg-purple-900/30 hover:bg-purple-900/50 text-purple-300 border border-purple-500/30 px-3 py-1.5 rounded-full text-[10px] font-bold transition-all shadow-[0_0_10px_rgba(168,85,247,0.2)] items-center gap-2">
-                <span>⚡</span> <span id="btn-playground">PLAYGROUND A</span>
-            </button>
-            
-            <button onclick="NX.toggleOverlay()" class="hidden sm:flex bg-cyan-900/30 hover:bg-cyan-900/50 text-cyan-300 border border-cyan-500/30 px-3 py-1.5 rounded-full text-[10px] font-bold transition-all shadow-[0_0_10px_rgba(0,229,255,0.2)]">🎮 ENGINE</button>
-            
-            <button onclick="shareApp()" class="p-2 rounded-full hover:bg-white/10 text-cyan-300 transition-colors glitch-hover hidden sm:flex" title="Airdrop / Share App">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684l-1.1 1.1m.758-4.899a4 4 0 00-5.656 0l4-4a4 4 0 00-5.656-5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1z"></path></svg>
-            </button>
-
-            <button onclick="copySystemLog()" class="hidden sm:flex bg-white/5 hover:bg-white/10 text-gray-300 border border-white/10 px-3 py-1.5 rounded-full text-[10px] font-bold transition-all items-center gap-1 hover:border-cyan-500/50 hover:text-white" title="Export System Log">
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002 2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 002 2v1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-                <span id="btn-copy-log">COPY LOG</span>
-            </button>
-
-            <button onclick="toggleProfile()" class="hidden sm:flex bg-white/5 hover:bg-white/10 text-gray-300 border border-white/10 px-3 py-1.5 rounded-full text-[10px] font-bold transition-all hover:border-cyan-500/50 hover:text-white">👤 <span id="btn-profile">PROFILE</span></button>
-            <button onclick="triggerKernelThought()" class="hidden sm:flex bg-cyan-900/30 hover:bg-cyan-900/50 text-cyan-300 border border-cyan-500/30 px-3 py-1.5 rounded-full text-[10px] font-bold transition-all active-ring">🧠 <span id="btn-kernel">KERNEL</span></button>
-            <button onclick="toggleCodeEditor()" class="hidden sm:flex bg-cyan-900/30 hover:bg-cyan-900/50 text-cyan-300 border border-cyan-500/30 px-3 py-1.5 rounded-full text-[10px] font-bold transition-all">🖋 <span id="btn-ide">IDE</span></button>
-            <button onclick="toggleAdmin()" id="admin-btn" class="p-2 rounded-full text-red-500/50 hover:text-red-500 hover:bg-red-900/20 transition-colors" title="System Console">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-            </button>
-        </div>
-    </header>
-
-    <!-- MAIN CHAT AREA -->
-    <main id="chat-container" class="flex-1 overflow-y-auto pt-20 pb-32 px-4 z-10 scroll-smooth max-w-4xl mx-auto w-full space-y-4 mask-gradient">
-    </main>
-
-    <!-- INPUT AREA -->
-    <div class="fixed bottom-0 left-0 w-full z-30 glass-panel border-t border-cyan-500/20 pt-3 pb-[calc(12px+var(--safe-bottom))] px-4 bg-black/90">
-        <div class="max-w-4xl mx-auto">
-            <div class="flex items-end gap-2 bg-black/40 rounded-xl p-1.5 border border-white/5 input-glow transition-all duration-300 shadow-2xl">
-                <button onclick="openKernelInput()" class="p-2.5 rounded-lg text-cyan-400 hover:bg-cyan-900/30 shrink-0 transition-colors" title="Ask AI">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
-                </button>
-                <input type="text" id="user-input" placeholder="Command: /ai [prompt], /img [prompt], /radio [genre], /game [name]..." autocomplete="off" class="flex-1 bg-transparent border-none outline-none text-white placeholder-gray-500 px-3 py-2.5 text-sm font-light tracking-wide">
-                <button id="send-btn" class="p-2.5 rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white shadow-lg shrink-0 transform active:scale-95 transition-all">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- FLOATING MEDIA DECK -->
-    <div id="media-deck" class="media-overlay glass-panel rounded-2xl overflow-hidden border border-cyan-500/30 shadow-[0_0_50px_rgba(0,229,255,0.3)]">
-        <div class="p-3 border-b border-white/5 flex justify-between items-center bg-black/40">
-            <span class="text-xs font-bold text-white font-header tracking-wider text-cyan-400" id="lbl-media-deck">MEDIA DECK</span>
-            <button onclick="toggleMedia()" class="text-gray-400 hover:text-white transition-colors">✕</button>
-        </div>
-        <div class="p-4">
-            <div class="flex gap-2 mb-4 p-1 bg-white/5 rounded-lg">
-                <button onclick="switchMediaTab('video')" id="tab-btn-video" class="flex-1 py-1.5 text-[10px] font-bold rounded bg-white/10 text-cyan-300 shadow-sm border border-white/5 transition-all hover:bg-white/20">VIDEO</button>
-                <button onclick="switchMediaTab('radio')" id="tab-btn-radio" class="flex-1 py-1.5 text-[10px] font-bold rounded text-gray-400 hover:text-white hover:bg-white/5 transition-all">RADIO</button>
-            </div>
-            
-            <div id="tab-video">
-                <div id="video-placeholder" class="bg-black/50 rounded-lg p-6 text-center border border-white/5 border-dashed mb-3">
-                    <p class="text-xs text-gray-500 mb-2 font-mono" id="txt-uplink-status">Uplink Status: STANDBY</p>
-                    <button id="btn-enable-video" onclick="startWebRTC()" class="text-[10px] bg-cyan-600 hover:bg-cyan-500 text-white px-4 py-2 rounded shadow-lg transition-all w-full border border-cyan-400/30 flex items-center justify-center gap-2">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg> <span id="btn-init-video">INITIALIZE BROADCAST</span>
-                    </button>
-                    <button id="btn-disable-video" onclick="stopWebRTC()" class="hidden-ui text-[10px] bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded shadow-lg transition-all w-full border border-red-400/30 flex items-center justify-center gap-2">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg> <span id="btn-term-video">TERMINATE LINK</span>
-                    </button>
-                </div>
-                <div id="file-transfer-ui" class="hidden-ui mt-2 p-2 bg-white/5 rounded border border-white/10">
-                    <div class="text-[9px] text-gray-400 mb-1 font-mono" id="lbl-p2p-files">P2P DATA CHANNEL</div>
-                    <input type="file" id="p2p-file-input" class="hidden" onchange="handleFileSelect(this)">
-                    <button onclick="document.getElementById('p2p-file-input').click()" class="w-full text-[10px] bg-cyan-900/40 hover:bg-cyan-900/60 text-cyan-300 py-2 rounded border border-cyan-500/30 flex items-center justify-center gap-2 transition-colors">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-                        <span id="btn-send-file">SEND FILE</span>
-                    </button>
-                    <div id="transfer-progress" class="mt-2 hidden">
-                        <div class="h-1 w-full bg-gray-700 rounded overflow-hidden">
-                            <div id="progress-bar" class="h-full bg-cyan-500 w-0 transition-all duration-200"></div>
-                        </div>
-                        <div class="text-[8px] text-cyan-400 mt-1 text-right" id="transfer-status">0%</div>
+                <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent">
+                    <div class="flex gap-2">
+                        <input id="chat-input" type="text" placeholder="Send a message..." class="flex-1 input-dark rounded-lg px-4 py-2 text-sm">
+                        <button onclick="App.chat.send()" class="bg-violet-600 hover:bg-violet-500 px-4 py-2 rounded-lg text-xs font-bold transition">SEND</button>
                     </div>
                 </div>
-                <div id="video-grid" class="hidden video-grid"></div>
-            </div>
-            
-            <div id="tab-radio" class="hidden">
-                <div class="relative mb-2">
-                    <input type="text" id="radio-search-input" placeholder="Search stations..." 
-                           class="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:border-cyan-500 outline-none font-mono placeholder-gray-600">
-                    <div class="absolute right-2 top-2 text-gray-500 text-[10px]">🔍</div>
-                </div>
-                <div class="text-[10px] text-gray-400 font-mono mb-2" id="txt-scan-freq">>> CONNECTING TO FREQUENCY...</div>
-                <div id="radio-genres-container" class="radio-genres"><div class="text-center w-full text-gray-500 text-[9px] py-2">LOADING GENRES...</div></div>
-                <div id="radio-stations-container" class="station-list"><div class="text-center text-gray-500 text-[9px] py-4">SELECT A GENRE OR SEARCH</div></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ADMIN PANEL -->
-    <div id="admin-panel" class="hidden-ui fixed bottom-20 right-4 left-4 md:left-auto md:w-80 glass-panel rounded-xl border border-red-500/30 p-5 z-50 shadow-2xl bg-black/90">
-        <h3 class="text-cyan-400 font-header text-xs font-bold mb-4 uppercase flex justify-between items-center">
-            <span id="lbl-sys-console">System Console</span>
-            <span class="text-[9px] bg-cyan-900/50 px-2 py-0.5 rounded text-cyan-300">GEN 2</span>
-        </h3>
-        <div class="space-y-4">
-            <div>
-                <label class="text-[9px] text-gray-500 uppercase font-bold tracking-wider mb-1 block">AI PROVIDER</label>
-                <select id="provider-select" onchange="updateProviderSettings()" class="w-full bg-black/50 border border-white/10 rounded p-2.5 text-white text-xs focus:border-cyan-500 outline-none font-mono transition-colors">
-                    <option value="groq">Groq (Fast/Free)</option>
-                    <option value="deepseek">DeepSeek (Official)</option>
-                    <option value="zhipu">Zhipu AI (GLM)</option>
-                    <option value="pollinations">Pollinations (Free/Open)</option>
-                </select>
-            </div>
-            <div>
-                <label class="text-[9px] text-gray-500 uppercase font-bold tracking-wider mb-1 block" id="lbl-api-key">API Key</label>
-                <input type="password" id="api-key-input" class="w-full bg-black/50 border border-white/10 rounded p-2.5 text-white text-xs focus:border-cyan-500 outline-none font-mono transition-colors" placeholder="Enter Key...">
-            </div>
-            <div>
-                <label class="text-[9px] text-gray-500 uppercase font-bold tracking-wider mb-1 block">NEURAL MODEL</label>
-                <select id="model-select" class="w-full bg-black/50 border border-white/10 rounded p-2.5 text-white text-xs focus:border-cyan-500 outline-none font-mono transition-colors"></select>
-            </div>
-            
-            <!-- POLLINATIONS IMAGE MODEL SELECTOR -->
-            <div style="margin-top: 15px;">
-                <label class="text-[9px] text-gray-500 uppercase font-bold tracking-wider mb-1 block">IMAGE ENGINE MODEL</label>
-                <select id="pollinations-img-model" onchange="saveImgModel()" class="w-full bg-black/50 border border-white/10 rounded p-2.5 text-white text-xs focus:border-purple-500 outline-none font-mono transition-colors">
-                    <option value="flux">Flux (Realistic)</option>
-                    <option value="turbo">Turbo (Fast)</option>
-                    <option value="sdxl">SDXL (Standard)</option>
-                    <option value="juggernaut">Juggernaut XL</option>
-                </select>
-            </div>
-
-            <button onclick="saveApiKey()" class="w-full bg-cyan-900/40 hover:bg-cyan-800/60 text-cyan-200 text-[10px] font-bold py-2.5 rounded border border-cyan-500/30 transition-all hover:shadow-[0_0_15px_rgba(0,229,255,0.3)]" id="btn-save-api">SAVE & RECONNECT</button>
-            <hr class="border-white/10">
-            <button onclick="resetSystem()" class="w-full bg-white/5 hover:bg-red-900/20 text-white text-[10px] font-bold py-2 rounded transition-colors border border-white/10 hover:border-red-500/50" id="btn-reset-sys">EMERGENCY SYSTEM RESET</button>
-        </div>
-    </div>
-
-    <!-- PROFILE MODAL -->
-    <div id="profile-modal" class="hidden-ui fixed inset-0 z-[60] bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
-        <div class="glass-panel p-8 rounded-2xl border border-cyan-500/30 max-w-sm w-full mx-4 text-center shadow-[0_0_60px_rgba(0,229,255,0.3)]">
-            <h3 class="text-white font-header font-bold mb-6 text-lg tracking-wider" id="lbl-user-id">USER IDENTITY</h3>
-            <div class="space-y-6">
-                <div class="flex flex-col items-center gap-3">
-                    <div id="profile-avatar-preview" class="w-24 h-24 rounded-full bg-gray-800 border-2 border-cyan-500 overflow-hidden flex items-center justify-center text-3xl shadow-[0_0_20px_rgba(0,229,255,0.5)] relative group">
-                        👤
-                        <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer" onclick="document.getElementById('avatar-upload').click()">
-                            <span class="text-xs text-white">CHANGE</span>
-                        </div>
-                    </div>
-                    <button onclick="document.getElementById('avatar-upload').click()" class="text-[10px] text-cyan-300 font-bold tracking-widest hover:text-white transition-colors border-b border-cyan-500/30 pb-0.5" id="btn-up-avatar">UPLOAD AVATAR</button>
-                </div>
-                <div class="text-left">
-                    <label class="block text-xs text-cyan-400 mb-1 font-mono font-bold" id="lbl-codename">CODENAME</label>
-                    <input type="text" id="edit-name" class="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-white focus:border-cyan-500 outline-none transition-colors font-mono">
-                </div>
-                <div class="text-left space-y-3 pt-2 border-t border-white/10">
-                    <label class="block text-[10px] text-gray-400 font-bold uppercase" id="lbl-settings">SETTINGS</label>
-                    <div class="flex justify-between items-center bg-black/20 p-2 rounded">
-                        <span class="text-xs text-gray-300" id="lbl-language">Language</span>
-                        <select id="lang-select" onchange="changeLanguage(this.value)" class="bg-black/50 border border-white/10 text-xs text-white rounded px-2 py-1 outline-none">
-                            <option value="en">English</option>
-                            <option value="lt">Lietuvių</option>
-                        </select>
-                    </div>
-                    <button onclick="generateInviteLink()" class="w-full bg-cyan-900/30 hover:bg-cyan-900/50 text-cyan-300 text-[10px] font-bold py-2 rounded border border-cyan-500/30 transition-all flex items-center justify-center gap-2">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
-                        <span id="btn-gen-invite">GENERATE INVITE LINK</span>
-                    </button>
-                </div>
-            </div>
-            <div class="flex gap-3 mt-8">
-                <button onclick="saveProfile()" class="flex-1 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white text-xs font-bold py-2.5 rounded-lg shadow-lg transition-all transform hover:-translate-y-0.5" id="btn-save-id">SAVE ID</button>
-                <button onclick="toggleProfile()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-gray-300 text-xs font-bold py-2.5 rounded-lg border border-white/10 transition-all" id="btn-cancel">CANCEL</button>
-            </div>
-        </div>
-    </div>
-    <input type="file" id="avatar-upload" class="hidden" accept="image/*">
-
-    <!-- CODE EDITOR OVERLAY -->
-    <div id="code-editor-overlay">
-        <div class="h-12 border-b border-white/10 flex items-center justify-between px-4 bg-[#0d1117]">
-            <div class="flex gap-2">
-                <div class="w-3 h-3 rounded-full bg-red-500/80"></div>
-                <div class="w-3 h-3 rounded-full bg-yellow-500/80"></div>
-                <div class="w-3 h-3 rounded-full bg-green-500/80"></div>
-            </div>
-            <span class="text-xs text-gray-400 font-mono tracking-widest">SYSTEM_EDITOR_V6.0 [NEXUS]</span>
-            <div class="flex gap-2">
-                <button onclick="toggleRepoSettings()" class="text-[9px] bg-gray-800 hover:bg-gray-700 text-white px-2 py-1 rounded border border-gray-600 flex items-center gap-1"><span>⚙️ REPO SETTINGS</span></button>
-                <button onclick="pushToRepo()" class="text-[9px] bg-green-900 hover:bg-green-800 text-white px-2 py-1 rounded border border-green-600 flex items-center gap-1"><span>COMMIT & PUSH</span></button>
-                <button onclick="resetGamePreview()" class="text-[9px] bg-red-900 hover:bg-red-800 text-white px-2 py-1 rounded border border-red-600 flex items-center gap-1"><span>RESET GAME</span></button>
-                <button onclick="toggleCodeEditor()" class="text-white hover:text-red-400 font-bold text-lg px-2">×</button>
-            </div>
-        </div>
-        
-        <div id="ide-repo-settings" class="hidden-ui bg-black border-b border-white/10 p-3 grid grid-cols-2 md:grid-cols-4 gap-2 items-end">
-            <div><label class="text-[8px] text-gray-500 uppercase">GitHub Token</label><input type="password" id="gh-token" placeholder="ghp_..." class="w-full bg-[#0d1117] border border-white/20 text-white text-[10px] p-1 rounded outline-none"></div>
-            <div><label class="text-[8px] text-gray-500 uppercase">Owner</label><input type="text" id="gh-owner" placeholder="username" class="w-full bg-[#0d1117] border border-white/20 text-white text-[10px] p-1 rounded outline-none"></div>
-            <div><label class="text-[8px] text-gray-500 uppercase">Repo Name</label><input type="text" id="gh-repo" placeholder="my-repo" class="w-full bg-[#0d1117] border border-white/20 text-white text-[10px] p-1 rounded outline-none"></div>
-            <div><label class="text-[8px] text-gray-500 uppercase">File Path</label><input type="text" id="gh-path" placeholder="index.html" class="w-full bg-[#0d1117] border border-white/20 text-white text-[10px] p-1 rounded outline-none"></div>
-            <div class="col-span-2 md:col-span-4 mt-2 pt-2 border-t border-white/10 flex justify-between items-center">
-                <div class="flex gap-2 items-center">
-                    <input type="text" id="load-repo-input" placeholder="owner/repo (e.g. vercel/next.js)" class="bg-[#0d1117] border border-white/20 text-white text-[10px] p-1 rounded outline-none w-64">
-                    <button onclick="installRepo()" class="bg-cyan-900 hover:bg-cyan-800 text-white text-[9px] px-3 py-1 rounded border border-cyan-500">INSTALL / CLONE</button>
-                </div>
-                <div class="text-[9px] text-gray-500 font-mono" id="file-sha-display">SHA: --</div>
-            </div>
-        </div>
-
-        <div class="editor-body">
-            <div class="editor-col"><textarea id="code-area" spellcheck="false" placeholder="// Write code here..."></textarea></div>
-            <div class="editor-col" id="preview-area">
-                <div class="absolute top-2 right-2 z-10 flex gap-2"><button onclick="runCode()" class="bg-green-600 text-white text-[9px] px-2 py-1 rounded font-bold" id="btn-run-preview">RUN PREVIEW</button></div>
-                <iframe id="preview-frame" title="Preview"></iframe>
-            </div>
-            <div class="editor-col" id="copilot-panel">
-                <div class="copilot-header"><span>COPILOT AI</span><span class="text-[9px] text-gray-400 font-normal" id="copilot-status">READY</span></div>
-                <div class="copilot-chat" id="copilot-chat-log"><div class="text-gray-500 italic text-[10px] mb-2">I can Fix, Mutate, or Explain your code.</div></div>
-                <div class="border-t border-white/10 p-2 bg-[#050505]">
-                    <button onclick="triggerAutoFix()" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white text-[9px] font-bold py-2 rounded flex items-center justify-center gap-2 mb-2 shadow-[0_0_10px_rgba(0,229,255,0.3)]"><span>🩹 AUTO-FIX / MUTATE CODE</span></button>
-                </div>
-                <div class="copilot-input-area"><input type="text" id="copilot-input" class="copilot-input" placeholder="Ask about code..."><button onclick="askCopilot()" class="text-cyan-400 hover:text-white px-2">➤</button></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- NEXUS ENGINE V2 OVERLAY -->
-    <div id="nexus-engine-overlay">
-        <div class="nx-toolbar">
-            <div class="flex items-center gap-3">
-                <div class="w-3 h-3 rounded-full bg-cyan-500 shadow-[0_0_10px_#00e5ff] animate-pulse"></div>
-                <div class="nx-title">NEXUS ENGINE <span style="font-size:10px; opacity:0.6; color:#fff">V2.0</span></div>
-            </div>
-            <div style="display:flex; gap:10px;">
-                <button onclick="NX.toggleConsole()" class="nx-btn" style="border-color:#333; color:#fff;">CONSOLE</button>
-                <button onclick="NX.toggle3D()" class="nx-btn" id="btn-3d" style="border-color:#333; color:#fff;">2D VIEW</button>
-                <button onclick="NX.runGame()" class="nx-btn nx-btn-primary" id="btn-run">RUN GAME</button>
-                <button onclick="NX.stopGame()" class="nx-btn nx-btn-danger hidden" id="btn-stop">STOP</button>
-                <button onclick="NX.toggleOverlay()" class="nx-btn nx-btn-danger">CLOSE</button>
-            </div>
-        </div>
-
-        <div class="nx-workspace">
-            <aside class="nx-sidebar">
-                <div class="tool-section">
-                    <div class="tool-title">1. Entity Fabricator</div>
-                    <div class="config-row">
-                        <label>Type</label>
-                        <select id="nx-type" class="nx-input" style="width:100%" onchange="NX.updatePreview()">
-                            <option value="player">Hero (Player)</option>
-                            <option value="enemy">Enemy (Drone)</option>
-                            <option value="wall">Block (Wall)</option>
-                            <option value="platform">Platform</option>
-                            <option value="coin">Item (Coin)</option>
-                            <option value="spike">Hazard (Spike)</option>
-                            <option value="goal">Portal (Goal)</option>
-                        </select>
-                    </div>
-                    
-                    <div id="logic-props">
-                        <div class="config-row"><label>Width</label><input type="number" id="nx-w" class="nx-input" value="30"></div>
-                        <div class="config-row"><label>Height</label><input type="number" id="nx-h" class="nx-input" value="30"></div>
-                        <div class="config-row"><label>Speed</label><input type="number" id="nx-speed" class="nx-input" value="2"></div>
-                        <div class="config-row"><label>Gravity</label><input type="number" id="nx-grav" class="nx-input" value="0.5"></div>
-                        <div class="config-row"><label>Color</label><input type="color" id="nx-color" class="nx-input" style="width:40px; padding:0;" value="#00e5ff"></div>
-                    </div>
-                    
-                    <button onclick="NX.placeEntityCenter()" class="nx-btn nx-btn-primary" style="width:100%; margin-top:10px;">Place in Center</button>
-                    <div style="font-size:10px; color:#666; text-align:center; margin-top:5px;">(Or Click on Canvas)</div>
-                </div>
-
-                <div class="tool-section">
-                    <div class="tool-title">2. Neural Logic</div>
-                    <select id="nx-behavior" class="nx-input" style="width:100%; margin-bottom:10px;">
-                        <option value="idle">Idle (Do Nothing)</option>
-                        <option value="patrol">Patrol (Move Left/Right)</option>
-                        <option value="chase">Chase (Follow Player)</option>
-                        <option value="bounce">Bounce (Hop)</option>
-                    </select>
-                    <div style="font-size:10px; color:#666;">Apply behavior to newly created Enemies or Players.</div>
-                </div>
-
-                <div style="margin-top:auto; padding:15px; border-top:1px solid #333;">
-                    <button onclick="NX.clearLevel()" class="nx-btn nx-btn-danger" style="width:100%">CLEAR LEVEL DATA</button>
-                </div>
-            </aside>
-
-            <section class="nx-viewport">
-                <canvas id="nx-canvas" width="800" height="600"></canvas>
-                <div id="nx-status" class="nx-status">DESIGN MODE</div>
             </section>
 
-            <aside class="nx-console-panel hidden" id="nx-right-panel">
-                <div class="tool-title" style="padding:10px; background:#0a0c0e; border-bottom:1px solid #333; color:#22c55e;">TERMINAL OUTPUT</div>
-                <div class="console-output" id="nx-console-out">
-                    <div>> System Ready.</div>
-                    <div>> Type 'help' for commands.</div>
-                </div>
-                <div class="console-input-area">
-                    <span style="color:#666">></span>
-                    <input type="text" id="nx-console-in" class="console-input" placeholder="Command..." autocomplete="off">
-                </div>
-
-                <div style="padding:15px; border-top:1px solid #333; background:#0d0f12;">
-                    <div class="tool-title" style="margin-bottom:10px; color:#00e5ff">AI GENERATOR</div>
-                    <textarea id="nx-ai-prompt" class="console-input" style="width:100%; height:60px; margin-bottom:10px; background:#1a1d26; border:1px solid #333; color:#e2e8f0; border-radius:4px; padding:8px; resize:none;" placeholder="e.g. Create a castle level with guards..."></textarea>
-                    <button onclick="NX.generateLevelAI()" class="nx-btn nx-btn-primary" style="width:100%;">GENERATE LEVEL</button>
-                </div>
-            </aside>
-        </div>
-    </div>
-
-    <!-- PLAYGROUND A OVERLAY -->
-    <div id="playground-overlay">
-        <div class="nx-toolbar" style="background: #0f0814; border-color: #581c87;">
-            <div class="flex items-center gap-3">
-                <div class="w-3 h-3 rounded-full bg-purple-500 shadow-[0_0_10px_#a855f7] animate-pulse"></div>
-                <div class="nx-title" style="color:#a855f7; text-shadow: 0 0 10px rgba(168,85,247,0.5);">PLAYGROUND A // IMAGE Z</div>
-            </div>
-            <button onclick="togglePlayground()" class="nx-btn nx-btn-danger">EXIT</button>
-        </div>
-
-        <div class="pg-workspace">
-            <aside class="pg-sidebar">
-                <div class="p-5 border-b border-white/10">
-                    <label class="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-2 block">Prompt</label>
-                    <textarea id="pg-prompt" class="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white text-sm h-32 focus:border-purple-500 outline-none font-mono resize-none" placeholder="Describe your vision..."></textarea>
+            <!-- 2. IDE VIEW -->
+            <section id="view-ide" class="absolute inset-0 hidden flex-col">
+                <header class="h-10 bg-[#0a0a0a] flex items-center px-4 border-b border-[#111]">
+                    <span class="text-xs text-violet-400 font-bold">IDE WORKSPACE</span>
+                    <button onclick="App.ide.run()" class="ml-4 text-[10px] px-2 py-1 bg-green-900/30 text-green-400 border border-green-500/20 rounded hover:bg-green-900/50">▶ PREVIEW</button>
+                </header>
+                <div class="ide-grid flex-1">
+                    <div class="flex flex-col overflow-hidden">
+                        <textarea id="ide-code" class="code-editor flex-1 p-3 outline-none" spellcheck="false">
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { background: #111; color: white; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        h1 { text-shadow: 0 0 10px #8b5cf6; }
+    </style>
+</head>
+<body>
+    <h1>Hello Nexus</h1>
+</body>
+</html>
+                        </textarea>
+                    </div>
+                    <div class="bg-white relative flex flex-col border-l border-[#111]">
+                        <iframe id="ide-preview" class="flex-1 w-full border-none"></iframe>
+                    </div>
                     
-                    <div class="mt-3 flex gap-2">
-                         <div class="flex-1">
-                            <label class="text-[9px] text-gray-500 uppercase font-bold tracking-wider mb-1 block">Model</label>
-                            <select id="pg-model" class="w-full bg-black/50 border border-white/10 text-gray-300 text-[10px] p-2 rounded outline-none font-mono">
-                                <option value="flux">Flux</option>
-                                <option value="turbo">Turbo</option>
-                                <option value="sdxl">SDXL</option>
-                                <option value="juggernaut">Juggernaut</option>
+                    <!-- COPILOT -->
+                    <div class="copilot-col bg-[#050505] border-l border-[#111] flex flex-col overflow-hidden">
+                        <div class="p-2 border-b border-[#111] flex justify-between items-center">
+                            <span class="text-[10px] text-violet-400 font-bold uppercase">Copilot</span>
+                        </div>
+                        <div class="p-2 flex gap-1 border-b border-[#111]">
+                            <button onclick="App.ide.fix()" class="flex-1 text-[9px] px-2 py-1 bg-green-900/30 text-green-300 rounded hover:bg-green-900/50 transition">⚡ Fix</button>
+                            <button onclick="App.ide.improve()" class="flex-1 text-[9px] px-2 py-1 bg-blue-900/30 text-blue-300 rounded hover:bg-blue-900/50 transition">🚀 Improve</button>
+                            <button onclick="App.ide.explain()" class="flex-1 text-[9px] px-2 py-1 bg-gray-900/30 text-gray-300 rounded hover:bg-gray-900/50 transition">❓ Explain</button>
+                        </div>
+                        <div id="ide-log" class="flex-1 overflow-y-auto p-2 font-mono text-[10px] text-gray-400 space-y-1"></div>
+                        <div class="p-2 bg-black border-t border-[#111]">
+                            <div class="flex gap-1">
+                                <input id="ide-input" type="text" placeholder="Ask AI..." class="flex-1 input-dark rounded px-2 py-1 text-[10px]">
+                                <button onclick="App.ide.ask()" class="bg-violet-600 text-white px-2 rounded text-[10px]">GO</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. TERMINAL VIEW -->
+            <section id="view-terminal" class="absolute inset-0 hidden flex-col bg-[#050505]">
+                <div id="term-output" class="flex-1 overflow-y-auto p-4 cli-output">
+                    <div class="text-green-500">> System Online. AI Connected.</div>
+                    <div class="text-gray-600">> Type 'help' for commands or chat with AI.</div>
+                </div>
+                <div class="h-10 border-t border-[#111] flex items-center px-2 bg-[#0a0a0a]">
+                    <span class="text-violet-400 text-xs mr-2">></span>
+                    <input id="term-input" type="text" class="flex-1 bg-transparent text-green-400 text-xs outline-none font-mono" placeholder="Enter Command...">
+                </div>
+            </section>
+
+            <!-- 4. GAME ENGINE VIEW -->
+            <section id="view-engine" class="absolute inset-0 hidden flex-col">
+                <div class="engine-grid">
+                    <aside class="bg-[#050505] border-r border-[#111] p-3 overflow-y-auto">
+                        <div class="text-[10px] text-gray-500 uppercase mb-2">Entity Fabricator</div>
+                        <div class="space-y-2">
+                            <button onclick="App.engine.add('player')" class="w-full text-[10px] text-left px-2 py-1 bg-green-900/20 text-green-400 rounded hover:bg-green-900/40 border border-green-500/20">+ Add Player</button>
+                            <button onclick="App.engine.add('enemy')" class="w-full text-[10px] text-left px-2 py-1 bg-red-900/20 text-red-400 rounded hover:bg-red-900/40 border border-red-500/20">+ Add Enemy</button>
+                            <button onclick="App.engine.add('wall')" class="w-full text-[10px] text-left px-2 py-1 bg-gray-900/20 text-gray-400 rounded hover:bg-gray-900/40 border border-gray-500/20">+ Add Wall</button>
+                        </div>
+                        
+                        <div class="mt-4 pt-4 border-t border-[#111]">
+                             <div class="text-[10px] text-gray-500 uppercase mb-2">Controls</div>
+                             <button onclick="App.engine.start()" class="w-full bg-violet-600 text-white text-[10px] py-1 rounded">START</button>
+                             <button onclick="App.engine.stop()" class="w-full bg-gray-800 text-white text-[10px] py-1 rounded mt-1">STOP</button>
+                        </div>
+                    </aside>
+                    <main class="flex flex-col items-center justify-center bg-black relative">
+                        <canvas id="engine-canvas" width="800" height="600"></canvas>
+                        <div class="absolute top-2 left-2 text-[10px] font-mono text-gray-600">Engine v2.0</div>
+                    </main>
+                </div>
+            </section>
+
+            <!-- 5. PLAYGROUND VIEW -->
+            <section id="view-playground" class="absolute inset-0 hidden flex-col md:flex-row bg-[#050505]">
+                <aside class="w-64 p-4 border-r border-[#111] space-y-3 overflow-y-auto">
+                    <textarea id="img-prompt" class="w-full h-20 input-dark rounded p-2 text-xs" placeholder="Describe image..."></textarea>
+                    <div class="flex flex-wrap gap-1">
+                        <button onclick="App.img.add('Cyberpunk')" class="px-2 py-1 bg-gray-900 rounded text-[9px] hover:bg-gray-800">Cyberpunk</button>
+                        <button onclick="App.img.add('Photorealistic')" class="px-2 py-1 bg-gray-900 rounded text-[9px] hover:bg-gray-800">Real</button>
+                    </div>
+                    <button onclick="App.img.gen()" class="w-full bg-violet-600 text-white py-2 rounded text-xs font-bold">GENERATE</button>
+                </aside>
+                <main class="flex-1 flex items-center justify-center relative grid-bg">
+                    <img id="img-out" class="max-h-full max-w-full rounded shadow-2xl hidden">
+                    <div id="img-loader" class="absolute inset-0 flex items-center justify-center bg-black/80 z-10 hidden text-violet-400 text-xs animate-pulse">Rendering...</div>
+                    <div id="img-place" class="text-gray-800 text-xs">OUTPUT</div>
+                </main>
+            </section>
+
+            <!-- 6. RADIO VIEW -->
+            <section id="view-radio" class="absolute inset-0 hidden p-4 overflow-y-auto">
+                <div class="max-w-md mx-auto space-y-4">
+                    <input id="radio-search" type="text" placeholder="Search Stations..." class="w-full input-dark rounded px-3 py-2 text-sm">
+                    <div id="radio-list" class="space-y-1"></div>
+                    <div id="radio-player" class="hidden glass-panel p-3 rounded">
+                        <div class="text-[10px] text-violet-400 mb-1" id="radio-title">...</div>
+                        <audio id="radio-audio" controls class="w-full h-8"></audio>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 7. SETTINGS VIEW -->
+            <section id="view-settings" class="absolute inset-0 hidden flex items-center justify-center bg-black/90">
+                <div class="glass-panel p-6 rounded-xl w-full max-w-sm border border-violet-900/20 anim">
+                    <h3 class="text-lg font-bold text-white mb-4">Settings</h3>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="text-[10px] text-gray-500 block mb-1">AI Provider</label>
+                            <select id="sel-prov" onchange="App.settings.ui()" class="w-full input-dark p-2 rounded">
+                                <option value="puter">Puter.ai (Free)</option>
+                                <option value="groq">Groq (Manual)</option>
                             </select>
-                         </div>
-                         <div class="w-20">
-                            <label class="text-[9px] text-gray-500 uppercase font-bold tracking-wider mb-1 block">Seed</label>
-                            <input type="number" id="pg-seed" class="w-full bg-black/50 border border-white/10 text-gray-300 text-[10px] p-2 rounded outline-none font-mono" placeholder="Rnd">
-                         </div>
+                        </div>
+                        <div id="wrap-key" class="opacity-40 pointer-events-none">
+                            <label class="text-[10px] text-gray-500 block mb-1">API Key</label>
+                            <input type="text" id="txt-key" placeholder="gsk_..." class="w-full input-dark p-2 rounded">
+                        </div>
+                        <button onclick="App.settings.save()" class="w-full bg-violet-600 text-white py-2 rounded text-xs font-bold mt-2">SAVE & RELOAD</button>
                     </div>
-
-                    <button onclick="runPlaygroundGen()" id="btn-pg-gen" class="w-full mt-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white text-xs font-bold py-3 rounded shadow-lg flex items-center justify-center gap-2">
-                        <span>⚡</span> GENERATE
-                    </button>
-                </div>
-
-                <div class="p-5 border-b border-white/10 bg-black/20">
-                    <div class="tool-title" style="color:#d8b4fe">IMAGE Z AI TOOLS</div>
-                    <button onclick="runVariation()" class="pg-tool-btn">
-                        <span>🔄</span> VARIATE (Clone)
-                    </button>
-                    <button onclick="runZoomOut()" class="pg-tool-btn">
-                        <span>🔭</span> ZOOM OUT
-                    </button>
-                    <div class="text-[9px] text-gray-500 mt-2 leading-tight">* Zoom out modifies prompt to include surroundings.</div>
-                </div>
-
-                <div class="flex-1 overflow-y-auto p-4 bg-black/40">
-                    <div class="tool-title mb-3">SESSION HISTORY</div>
-                    <div id="pg-history-grid" class="grid grid-cols-2 gap-3"></div>
-                </div>
-            </aside>
-
-            <section class="pg-main">
-                <div id="pg-placeholder" class="text-center text-gray-500 font-mono text-xs">
-                    <div class="w-16 h-16 border border-dashed border-gray-700 rounded-lg mx-auto mb-3 flex items-center justify-center">
-                        <span class="text-2xl">🖼️</span>
-                    </div>
-                    <p>WAITING FOR INPUT...</p>
-                </div>
-                <img id="pg-result-img" class="pg-image-preview hidden-ui" src="" alt="Generated">
-                
-                <div id="pg-loading" class="hidden-ui absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-20">
-                    <div class="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-                    <div class="text-purple-400 font-mono text-xs tracking-widest animate-pulse">RENDERING NEURAL PATHWAYS...</div>
                 </div>
             </section>
-        </div>
-    </div>
 
-    <!-- NEXUS SYSTEM TERMINAL OVERLAY (FINAL POLISH) -->
-    <div id="terminal-overlay">
-        <!-- CRT Overlay Effect -->
-        <div class="crt-overlay"></div>
-
-        <div class="flex items-center justify-between px-4 py-2 bg-[#111] border-b border-green-500/30">
-            <div class="flex items-center gap-2">
-                <div class="w-3 h-3 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_#22c55e]"></div>
-                <span class="text-green-500 font-bold text-sm tracking-widest">NEXUS_SYSTEM_TERMINAL v3.0</span>
-            </div>
-            <button onclick="toggleTerminal()" class="text-gray-500 hover:text-white transition-colors text-xs">[CLOSE] X</button>
-        </div>
-
-        <div id="terminal-output" class="flex-1 overflow-y-auto p-4 text-xs md:text-sm leading-6 text-green-400 shadow-inner">
-            <div id="term-welcome" class="mb-4 text-gray-500">
-                Nexus OS [Version 3.0]<br>
-                (c) 2023 Nexus Corporation. All rights reserved.<br>
-                <br>
-                Type <span class="text-white">'help'</span> for available commands.<br>
-                <br>
-            </div>
-        </div>
-
-        <div class="p-4 border-t border-green-500/30 bg-[#0a0a0a]">
-            <div class="flex items-center gap-2">
-                <span class="text-cyan-400 font-bold">user@nexus:~$</span>
-                <input type="text" id="term-input" class="flex-1 bg-transparent border-none outline-none text-white font-mono placeholder-gray-700" placeholder="Enter command..." autocomplete="off">
-            </div>
-        </div>
+        </main>
     </div>
 
     <script>
-        /* --- CONFIGURATION & STATE --- */
-        // RELIABLE LOCAL FALLBACK DATABASE
-        const STATIONS_DB = [
-            { name: "Lofi Girl - Beats to Relax/Study to", url: "https://streams.ilovemusic.com/lofigirl.mp3", genre: "LoFi" },
-            { name: "BBC Radio 1", url: "http://stream.live.vc.bbcmedia.co.uk/bbc_radio_one/bbc_radio_one.mp3", genre: "News" },
-            { name: "Classical FM", url: "http://stream.zeno.fm/fm3y54887", genre: "Classical" },
-            { name: "Deep House Radio", url: "https://stream.zeno.fm/0rQxaWZz7rUw8V", genre: "House" },
-            { name: "Synthwave 24/7", url: "https://stream.zeno.fm/s5w619d7y3uv", genre: "Synthwave" },
-            { name: "Absolute Classic Rock", url: "https://stream.zeno.fm/f3wv19p5y3uv", genre: "Rock" },
-            { name: "Ambient Sleeping Pill", url: "https://stream.zeno.fm/0rQxaWZz7rUw8V", genre: "Ambient" },
-            { name: "Techno Base", url: "https://stream.zeno.fm/2026914864h264", genre: "Techno" }
-        ];
+        // --- CORE UTILS ---
+        const $ = id => document.getElementById(id);
+        const Log = (msg, type = 'text') => console.log(`[NEXUS] ${msg}`);
 
-        const PROVIDERS = {
-            groq: { url: "https://api.groq.com/openai/v1/chat/completions", models: [{ id: "llama-3.3-70b-versatile", name: "Llama 3.3 70B (Fastest)" }, { id: "mixtral-8x7b-32768", name: "Mixtral 8x7b" }, { id: "gemma2-9b-it", name: "Gemma 2 9B" }], keyLabel: "Groq API Key" },
-            deepseek: { url: "https://api.deepseek.com/chat/completions", models: [{ id: "deepseek-chat", name: "DeepSeek V3" }, { id: "deepseek-coder", name: "DeepSeek Coder" }], keyLabel: "DeepSeek API Key" },
-            zhipu: { url: "https://open.bigmodel.cn/api/paas/v4/chat/completions", models: [{ id: "glm-4", name: "GLM-4" }, { id: "glm-4-flash", name: "GLM-4 Flash" }], keyLabel: "Zhipu API Key" },
-            pollinations: { url: "https://text.pollinations.ai/openai/v1/chat/completions", models: [{ id: "openai", name: "GPT-4o Mini (Pollinations)" }, { id: "qwen", name: "Qwen 2.5 (Pollinations)" }], keyLabel: "API Key (Optional - usually free)" }
-        };
-
-        let currentProvider = localStorage.getItem('nexus_provider') || 'groq';
-        let currentModel = localStorage.getItem('nexus_model') || 'llama-3.3-70b-versatile';
-        let currentImgModel = localStorage.getItem('nexus_img_model') || 'flux';
-        let apiKeys = JSON.parse(localStorage.getItem('nexus_api_keys') || '{}');
-        let ghToken = localStorage.getItem('nexus_gh_token') || '';
-        
-        // UPDATED SYSTEM MANIFEST
-        const SYSTEM_MANIFEST_EN = "You are Nexus AI v6.0. CRITICAL INSTRUCTION: If user asks for an image, picture, photo, drawing, or visual representation (e.g. 'draw a cat', 'show me mars'), do NOT describe it. Instead, reply ONLY with this specific format: [GENERATE_IMAGE: your exact prompt here]. If user asks for RADIO stations... Output ONLY a valid JSON array of objects. Schema: [{name: 'Station Name', url: 'http://stream.mp3', genre: 'Genre'}]. Otherwise, answer normally.";
-        
-        let currentLang = localStorage.getItem('nexus_lang') || 'en';
-        let userProfile = { name: localStorage.getItem('nexus_username') || 'User_' + Math.floor(Math.random() * 9999), avatar: localStorage.getItem('nexus_avatar') || "👤" };
-        let tempAvatarData = null;
-        let currentRoom = "public"; 
-        let mqttClient = null;
-        let currentFileSHA = null; 
-        let isTabActive = true; 
-
-        // FALLBACK BROKER LIST
-        const ALL_BROKERS = [
-            { name: "EMQX (Secure)", host: "broker.emqx.io", port: 8084, path: "/mqtt", ssl: true },
-            { name: "Mosquitto (Insecure)", host: "test.mosquitto.org", port: 8080, path: "/mqtt", ssl: false },
-            { name: "HiveMQ (Insecure)", host: "broker.hivemq.com", port: 8000, path: "/mqtt", ssl: false }
-        ];
-        let currentBrokerIdx = 0;
-        let mqttReconnectTimeout = null;
-
-        /* --- PLAYGROUND A LOGIC --- */
-        const PG = {
-            history: [],
-            currentPrompt: "",
-            currentSeed: null,
+        // --- APP LOGIC ---
+        const App = {
+            state: { currentView: 'chat', connected: false },
             
-            toggle: function() {
-                const el = document.getElementById('playground-overlay');
-                el.classList.toggle('active');
-                if(el.classList.contains('active')) {
-                    document.getElementById('pg-model').value = currentImgModel;
-                }
+            init: function() {
+                // Listeners
+                $('chat-input').addEventListener('keydown', e => { if(e.key==='Enter') this.chat.send(); });
+                $('ide-input').addEventListener('keydown', e => { if(e.key==='Enter') this.ide.ask(); });
+                $('term-input').addEventListener('keydown', e => { if(e.key==='Enter') this.terminal.process(); });
+                $('radio-search').addEventListener('input', e => this.radio.search(e.target.value));
+
+                // Load Settings
+                $('sel-prov').value = Nexus.provider;
+                $('txt-key').value = Nexus.key;
+                this.settings.ui();
+
+                // Boot Check
+                let attempts = 0;
+                const int = setInterval(() => {
+                    if ((Nexus.provider === 'puter' && Nexus.ready) || (Nexus.provider === 'groq' && Nexus.key)) {
+                        clearInterval(int);
+                        this.state.connected = true;
+                        this.navigate('chat');
+                        this.ui.status("ONLINE", "green");
+                    } else if (attempts > 30) {
+                        clearInterval(int);
+                        this.navigate('settings');
+                    }
+                    attempts++;
+                }, 100);
             },
 
-            addToHistory: function(url, prompt, seed) {
-                this.history.unshift({url, prompt, seed});
-                if(this.history.length > 20) this.history.pop();
-                this.renderHistory();
-            },
-
-            renderHistory: function() {
-                const grid = document.getElementById('pg-history-grid');
-                grid.innerHTML = '';
-                this.history.forEach((item, idx) => {
-                    const div = document.createElement('div');
-                    div.className = 'pg-history-item msg-anim';
-                    div.innerHTML = `<img src="${item.url}" loading="lazy">`;
-                    div.onclick = () => {
-                        document.getElementById('pg-prompt').value = item.prompt;
-                        document.getElementById('pg-seed').value = item.seed;
-                        this.showImage(item.url);
-                    };
-                    grid.appendChild(div);
-                });
-            },
-
-            showImage: function(url) {
-                const img = document.getElementById('pg-result-img');
-                const placeholder = document.getElementById('pg-placeholder');
-                img.src = url;
-                img.classList.remove('hidden-ui');
-                placeholder.classList.add('hidden-ui');
-            },
-
-            generate: async function(modifyPromptFn = null) {
-                const promptInput = document.getElementById('pg-prompt');
-                const seedInput = document.getElementById('pg-seed');
-                const modelSelect = document.getElementById('pg-model');
-                const loading = document.getElementById('pg-loading');
-                const btn = document.getElementById('btn-pg-gen');
-
-                let prompt = promptInput.value.trim();
-                if (!prompt) return;
-
-                if (modifyPromptFn) {
-                    prompt = modifyPromptFn(prompt);
-                    promptInput.value = prompt;
-                }
-
-                const seed = seedInput.value ? parseInt(seedInput.value) : Math.floor(Math.random() * 1000000);
-                seedInput.value = seed;
-
-                loading.classList.remove('hidden-ui');
-                btn.disabled = true;
-
-                const encodedPrompt = encodeURIComponent(prompt + " photorealistic, 8k, high quality");
-                const model = modelSelect.value;
-                const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true&seed=${seed}&model=${model}&enhance=true`;
-
-                try {
-                    const res = await fetch(imageUrl);
-                    const blob = await res.blob();
-                    const objectUrl = URL.createObjectURL(blob);
-                    
-                    this.showImage(objectUrl);
-                    this.addToHistory(objectUrl, prompt, seed);
-                    generateImage(prompt, true, objectUrl); 
-                } catch(e) {
-                    console.error(e);
-                    alert("Generation Failed");
-                } finally {
-                    loading.classList.add('hidden-ui');
-                    btn.disabled = false;
-                }
-            }
-        };
-
-        function togglePlayground() { PG.toggle(); }
-        function runPlaygroundGen() { PG.generate(); }
-        function runVariation() { PG.generate((p) => `${p}, different angle, variation, cinematic lighting`); }
-        function runZoomOut() { PG.generate((p) => `wide angle shot, zoomed out, see surroundings, background details, ${p}`); }
-
-        /* --- REAL NEXUS SYSTEM TERMINAL ENGINE (FINAL POLISH) --- */
-        const VFS = {
-            'index.html': document.documentElement.outerHTML,
-            'package.json': JSON.stringify({ name: "nexus-ai", version: "1.0.0" }, null, 2),
-            'README.md': "# Nexus AI\n> Advanced Neural Interface.",
-            node_modules: {}, 
-            build_artifact: null
-        };
-
-        const TERM = {
-            history: [],
-            historyIndex: -1,
-            
-            toggle: function() {
-                const el = document.getElementById('terminal-overlay');
-                el.classList.toggle('active');
-                if(el.classList.contains('active')) {
-                    document.getElementById('term-input').focus();
-                    // Add boot log effect on open
-                    this.print("Nexus OS Online. v3.0", "info");
-                }
-            },
-
-            print: function(text, type = "text") {
-                const output = document.getElementById('terminal-output');
-                const line = document.createElement('div');
-                line.className = 'term-line';
+            navigate: function(view) {
+                document.querySelectorAll('section').forEach(el => el.classList.add('hidden'));
+                document.querySelectorAll('.nav-icon').forEach(el => el.classList.remove('active'));
                 
-                if (type === "success") line.classList.add('term-success');
-                if (type === "error") line.classList.add('term-error');
-                if (type === "warning") line.classList.add('term-warning');
-                if (type === "info") line.classList.add('term-info');
-
-                line.innerHTML = text; // Allow HTML for formatting
-                output.appendChild(line);
-                output.scrollTop = output.scrollHeight;
+                $(`view-${view}`).classList.remove('hidden');
+                $(`nav-${view}`).classList.add('active');
+                this.state.currentView = view;
+                
+                // Run IDE on open
+                if(view === 'ide') setTimeout(() => this.ide.run(), 100);
             },
 
-            clear: function() {
-                const output = document.getElementById('terminal-output');
-                const welcome = document.getElementById('term-welcome');
-                output.innerHTML = '';
-                if(welcome) output.appendChild(welcome);
-            },
-
-            process: function(cmdStr) {
-                const parts = cmdStr.trim().split(' ');
-                const cmd = parts[0].toLowerCase();
-                const args = parts.slice(1);
-
-                this.print(`<span class="text-gray-500">user@nexus:~$</span> <span class="text-white">${cmdStr}</span>`);
-
-                switch(cmd) {
-                    case 'help':
-                        this.print("AVAILABLE COMMANDS:", "info");
-                        this.print("  ls                     List files in Virtual File System");
-                        this.print("  cat [file]             Read file contents");
-                        this.print("  npm install             Install build tools");
-                        this.print("  npm run build           Minify & Optimize build");
-                        this.print("  npm run deploy / deploy  Push build to GitHub");
-                        this.print("  download                Download current build artifact");
-                        this.print("  status                  System & Repo status");
-                        this.print("  clear                   Clear terminal screen");
-                        this.print("  exit                    Close terminal", "warning");
-                        break;
-                    case 'clear': this.clear(); break;
-                    case 'exit': this.toggle(); break;
-                    
-                    case 'ls':
-                        this.print("File System:", "info");
-                        Object.keys(VFS).forEach(key => {
-                            if(key !== 'node_modules' && key !== 'build_artifact') {
-                                const size = VFS[key].length;
-                                this.print(`  📄 ${key} (${(size/1024).toFixed(2)} KB)`, "text");
-                            }
-                        });
-                        if(Object.keys(VFS.node_modules).length > 0) {
-                            this.print(`  📦 node_modules/ (${Object.keys(VFS.node_modules).length} pkgs)`, "success");
-                        }
-                        break;
-
-                    case 'cat':
-                        if(!args[0]) { this.print("Usage: cat [filename]", "error"); return; }
-                        if(!VFS[args[0]]) { this.print(`File not found: ${args[0]}`, "error"); return; }
-                        this.print(`--- CONTENTS OF ${args[0]} ---`, "info");
-                        this.print(VFS[args[0]]);
-                        break;
-
-                    case 'npm':
-                        if(args[0] === 'install') this.runRealNpmInstall();
-                        else if (args[0] === 'run' && args[1] === 'build') this.runRealBuild();
-                        else if (args[0] === 'run' && args[1] === 'deploy') this.runRealDeploy();
-                        else if (args[0] === 'run' && args[1] === 'download') this.downloadArtifact();
-                        else this.print(`npm: command '${args.join(' ')}' not recognized`, "error");
-                        break;
-                    case 'deploy': this.runRealDeploy(); break;
-                    case 'download': this.downloadArtifact(); break;
-                    case 'status': this.runStatus(); break;
-                    case '': break;
-                    default: this.print(`Command not found: ${cmd}`, "error");
+            ui: {
+                status: function(text, color) {
+                    const nav = $('nav-chat');
+                    if(color === 'green') nav.style.color = '#22c55e';
+                    else nav.style.color = '#ef4444';
                 }
             },
 
-            runRealNpmInstall: async function() {
-                this.print(">> Resolving dependencies from package.json...", "info");
-                const dependencies = ['html-minifier-terser', 'clean-css-cli', 'chalk'];
-                let delay = 0;
-                
-                dependencies.forEach((pkg, i) => {
-                    setTimeout(() => {
-                        this.print(`> npm install ${pkg}@latest`, "warning");
-                        setTimeout(() => {
-                            VFS.node_modules[pkg] = "v" + (Math.random() + 2).toFixed(2); 
-                            this.print(`+ ${pkg}@${VFS.node_modules[pkg]} added to node_modules.`, "success");
-                            if(i === dependencies.length - 1) {
-                                setTimeout(() => {
-                                    this.print(">> All dependencies installed successfully.", "success");
-                                    this.print("Ready for deployment.", "info");
-                                }, 500);
-                            }
-                        }, 500);
-                    }, delay);
-                    delay += 1000;
-                });
-            },
-
-            runRealBuild: async function() {
-                if(Object.keys(VFS.node_modules).length === 0) {
-                    this.print("Error: 'node_modules' empty. Run 'npm install' first.", "error");
-                    return;
-                }
-                this.print(">> Starting Production Build...", "warning");
-                this.print("> Validating HTML structure...");
-                await new Promise(r => setTimeout(r, 500));
-                if(!VFS['index.html'].includes('<!DOCTYPE html>')) this.print("Warning: Missing Doctype.", "warning");
-                
-                this.print("> Optimizing Assets...", "info");
-                
-                // SIMULATED MINIFICATION (Polish)
-                // Remove comments to reduce size
-                const rawHtml = VFS['index.html'];
-                const minified = rawHtml.replace(/<!--[\s\S]*?-->/g, "").replace(/\n\s+/g, " ");
-                
-                this.print(">> Build Success! (Minified)", "success");
-                const originalSize = rawHtml.length;
-                const minSize = minified.length;
-                VFS.build_artifact = minified; 
-                this.print(`Original: ${(originalSize/1024).toFixed(2)} KB`, "info");
-                this.print(`Optimized: ${(minSize/1024).toFixed(2)} KB`, "success");
-                this.print("Artifacts ready for deployment.", "info");
-            },
-
-            runRealDeploy: async function() {
-                if(!VFS.build_artifact) {
-                    this.print("Error: Build artifact not found.", "error");
-                    this.print("Run 'npm run build' first.", "warning");
-                    return;
-                }
-                const token = document.getElementById('gh-token').value.trim() || ghToken; 
-                const owner = document.getElementById('gh-owner').value.trim(); 
-                const repo = document.getElementById('gh-repo').value.trim(); 
-
-                if(!token || !owner || !repo) {
-                    this.print("Error: Missing GitHub Credentials.", "error");
-                    this.print("Configure via IDE > ⚙️ REPO SETTINGS", "warning");
-                    return;
-                }
-                this.print(`>> Deploying to ${owner}/${repo}/gh-pages...`, "info");
-                this.print("> Checking remote HEAD...");
-                
-                setTimeout(async () => {
+            askAI: async function(prompt) {
+                // Puter
+                if (Nexus.provider === 'puter' && Nexus.ready) {
                     try {
-                        const path = 'index.html';
-                        let sha = currentFileSHA;
-                        if(!sha) {
-                            const checkRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, { headers: { 'Authorization': `token ${token}` } });
-                            if(checkRes.ok) { 
-                                const data = await checkRes.json(); 
-                                sha = data.sha; 
-                                currentFileSHA = sha; 
-                            } 
-                        }
-                        this.print("> Uploading build artifact...");
-                        const content = VFS.build_artifact;
-                        const encodedContent = btoa(unescape(encodeURIComponent(content))); 
-                        const payload = { message: `Deploy Nexus AI Build [${new Date().toISOString()}]`, content: encodedContent, sha: sha };
-                        const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
-                            method: 'PUT', 
-                            headers: { 
-                                'Authorization': `token ${token}`, 
-                                'Accept': 'application/vnd.github.v3+json' 
-                            }, 
-                            body: JSON.stringify(payload)
+                        return await puter.ai.chat(prompt);
+                    } catch(e) { return `Error: ${e.message}`; }
+                }
+                // Groq
+                if (Nexus.provider === 'groq' && Nexus.key) {
+                    try {
+                        const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                            method: "POST",
+                            headers: { "Authorization": `Bearer ${Nexus.key}`, "Content-Type": "application/json" },
+                            body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{role:"user", content:prompt}] })
                         });
-                        if(!res.ok) {
-                            const err = await res.json();
-                            throw new Error(err.message);
-                        }
-                        this.print(">> Deployment Successful!", "success");
-                        this.print(`Live URL: https://${owner}.github.io/${repo}/`, "info");
-                    } catch(e) {
-                        this.print(`Deployment Failed: ${e.message}`, "error");
+                        const data = await res.json();
+                        return data.choices[0].message.content;
+                    } catch(e) { return `Groq Error: ${e.message}`; }
+                }
+                return "AI OFFLINE. Configure in Settings.";
+            },
+
+            // --- MODULES ---
+            chat: {
+                send: async function() {
+                    const input = $('chat-input');
+                    const text = input.value.trim(); if(!text) return; input.value = "";
+                    
+                    const bubble = document.createElement('div');
+                    bubble.className = "p-3 rounded-xl max-w-md text-sm anim";
+                    bubble.className += " ml-auto bg-violet-900/30 border border-violet-500/20";
+                    bubble.innerHTML = text;
+                    $('chat-log').appendChild(bubble);
+
+                    const aiBubble = document.createElement('div');
+                    aiBubble.className = "p-3 rounded-xl max-w-md text-sm anim glass-panel border-gray-800";
+                    aiBubble.innerText = "...";
+                    $('chat-log').appendChild(aiBubble);
+
+                    $('chat-log').scrollTop = 9999;
+                    const res = await App.askAI(text);
+                    aiBubble.innerText = res;
+                }
+            },
+
+            ide: {
+                run: function() {
+                    const doc = $('ide-preview').contentDocument;
+                    doc.open();
+                    doc.write($('ide-code').value);
+                    doc.close();
+                },
+                log: function(t, type) {
+                    const div = document.createElement('div');
+                    div.className = type === 'ai' ? 'text-green-400' : 'text-gray-500';
+                    div.innerText = `> ${t}`;
+                    $('ide-log').appendChild(div);
+                    $('ide-log').scrollTop = 999;
+                },
+                fix: async function() {
+                    this.log("Analyzing...", 'sys');
+                    const code = $('ide-code').value;
+                    const res = await App.askAI(`Fix this code. Return ONLY code:\n\n${code}`);
+                    $('ide-code').value = res;
+                    this.run();
+                    this.log("Code Updated.", 'ai');
+                },
+                improve: async function() {
+                    this.log("Improving...", 'sys');
+                    const code = $('ide-code').value;
+                    const res = await App.askAI(`Improve logic. Return ONLY code:\n\n${code}`);
+                    $('ide-code').value = res;
+                    this.run();
+                    this.log("Code Improved.", 'ai');
+                },
+                explain: async function() {
+                    this.log("Analyzing...", 'sys');
+                    const res = await App.askAI(`Explain this code simply:\n\n${$('ide-code').value}`);
+                    this.log(res, 'ai');
+                },
+                ask: async function() {
+                    const q = $('ide-input').value; if(!q) return; $('ide-input').value = "";
+                    this.log(`User: ${q}`, 'sys');
+                    const res = await App.askAI(q);
+                    this.log(res, 'ai');
+                }
+            },
+
+            terminal: {
+                process: async function() {
+                    const input = $('term-input');
+                    const cmd = input.value; input.value = "";
+                    
+                    const ln = document.createElement('div'); ln.innerText = `> ${cmd}`; $('term-output').appendChild(ln);
+                    
+                    // Intercept basic commands
+                    if(cmd === 'clear') { $('term-output').innerHTML = ''; return; }
+                    if(cmd === 'help') { 
+                        const help = document.createElement('div');
+                        help.innerText = "Available: clear, help, chat [msg]";
+                        help.className = 'text-gray-500 mb-2';
+                        $('term-output').appendChild(help);
+                        return;
                     }
-                }, 1500);
+
+                    // Use AI for everything else
+                    const res = await App.askAI(`User typed command in terminal: "${cmd}". Execute or respond.`);
+                    const resLn = document.createElement('div');
+                    resLn.innerText = res;
+                    resLn.className = 'text-gray-300 mb-2';
+                    $('term-output').appendChild(resLn);
+                    $('term-output').scrollTop = 9999;
+                }
             },
 
-            runStatus: function() {
-                this.print("SYSTEM STATUS", "info");
-                this.print(`  Platform: Browser (WebAssembly Ready)`);
-                this.print(`  VFS Files: ${Object.keys(VFS).length}`);
-                this.print(`  Build Artifact: ${VFS.build_artifact ? "Ready (" + ((VFS.build_artifact.length/1024).toFixed(2)) + " KB)" : "Pending"}`, VFS.build_artifact ? "success" : "warning");
-                const token = document.getElementById('gh-token').value;
-                this.print(`  GitHub Token: ${token ? "Configured" : "Missing"}`, token ? "success" : "error");
-            },
-
-            downloadArtifact: function() {
-                if(!VFS.build_artifact) {
-                    this.print("No artifact built. Run 'npm run build' first.", "warning");
-                    return;
-                }
-                try {
-                    const blob = new Blob([VFS.build_artifact], { type: 'text/html' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'build.html';
-                    a.click();
-                    this.print(">> Downloading build.html...", "success");
-                } catch(e) {
-                    this.print("Download failed: " + e.message, "error");
-                }
-            }
-        };
-
-        function toggleTerminal() { TERM.toggle(); }
-        
-        // Terminal Input Listener
-        document.getElementById('term-input').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                const input = e.target.value;
-                TERM.process(input);
-                TERM.history.push(input);
-                TERM.historyIndex = TERM.history.length;
-                e.target.value = '';
-            } else if (e.key === 'ArrowUp') {
-                if(TERM.historyIndex > 0) {
-                    TERM.historyIndex--;
-                    e.target.value = TERM.history[TERM.historyIndex];
-                }
-            } else if (e.key === 'ArrowDown') {
-                if(TERM.historyIndex < TERM.history.length - 1) {
-                    TERM.historyIndex++;
-                    e.target.value = TERM.history[TERM.historyIndex];
-                } else {
-                    TERM.historyIndex = TERM.history.length;
-                    e.target.value = '';
-                }
-            }
-        });
-
-        /* --- NEXUS ENGINE V2 LOGIC --- */
-        const NX = {
-            active: false, mode: 'DESIGN', entities: [], particles: [], ctx: null, canvas: null, lastTime: 0, keys: {}, view3D: false,
-            selectedTool: { type: 'player', w: 30, h: 30, speed: 2, color: '#00e5ff', behavior: 'idle', gravity: 0.5 }, playerRef: null,
-            
-            toggleOverlay: function() {
-                const overlay = document.getElementById('nexus-engine-overlay');
-                if(overlay.classList.contains('active')) {
-                    overlay.classList.remove('active'); this.active = false; this.stopGame();
-                } else {
-                    overlay.classList.add('active');
-                    if(!this.canvas) this.init();
-                    this.active = true; this.canvas.focus();
-                }
-            }, init: function() {
-                this.canvas = document.getElementById('nx-canvas'); this.ctx = this.canvas.getContext('2d');
-                this.canvas.addEventListener('mousedown', (e) => this.handleInput(e));
-                document.addEventListener('keydown', (e) => {
-                    if(this.active) {
-                        this.keys[e.key] = true;
-                        if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' ','w','a','s','d'].includes(e.key)) { e.preventDefault(); e.stopPropagation(); }
-                    }
-                });
-                document.addEventListener('keyup', (e) => { if(this.active) this.keys[e.key] = false; });
-                document.getElementById('nx-console-in').addEventListener('keydown', (e) => { if(e.key === 'Enter') this.handleConsole(e.target.value); });
-                this.active = true; this.loop();
-            }, toggleConsole: function() { const p = document.getElementById('nx-right-panel'); p.classList.toggle('hidden'); },
-            toggle3D: function() { this.view3D = !this.view3D; const btn = document.getElementById('btn-3d'); btn.innerText = this.view3D ? "3D VIEW (SIM)" : "2D VIEW"; },
-            handleInput: function(e) {
-                if(this.mode !== 'DESIGN') return;
-                const rect = this.canvas.getBoundingClientRect();
-                const scaleX = 800 / rect.width; const scaleY = 600 / rect.height;
-                const x = (e.clientX - rect.left) * scaleX; const y = (e.clientY - rect.top) * scaleY;
-                const clicked = this.entities.slice().reverse().find(ent => x >= ent.x && x <= ent.x + ent.w && y >= ent.y && y <= ent.y + ent.h);
-                if(clicked) { if(confirm(`Delete ${clicked.type}?`)) { this.entities = this.entities.filter(en => en !== clicked); this.log(`Deleted entity at ${Math.round(clicked.x)},${Math.round(clicked.y)}`); } }
-                else { this.spawnEntity(x, y); }
-            }, placeEntityCenter: function() { this.spawnEntity(400 - this.selectedTool.w / 2, 300 - this.selectedTool.h / 2); },
-            spawnEntity: function(x, y) {
-                const type = document.getElementById('nx-type').value;
-                const w = parseFloat(document.getElementById('nx-w').value) || 30; const h = parseFloat(document.getElementById('nx-h').value) || 30;
-                const speed = parseFloat(document.getElementById('nx-speed').value) || 2; const grav = parseFloat(document.getElementById('nx-grav').value) || 0.5;
-                const color = document.getElementById('nx-color').value; const behavior = document.getElementById('nx-behavior').value;
-                const ent = { id: Date.now() + Math.random(), type, x, y, w, h, speed, color, behavior, dx: 0, dy: 0, grounded: false, startX: x, patrolDir: 1 };
-                if(type === 'player') this.entities = this.entities.filter(e => e.type !== 'player');
-                this.entities.push(ent);
-                this.log(`Spawned ${type} at ${Math.round(x)},${Math.round(y)}`); this.createParticles(x + w/2, y + h/2, '#fff', 10);
-            },
-            updateLogic: function(ent, dt) {
-                if(ent.behavior === 'patrol') { ent.x += ent.speed * ent.patrolDir * 0.05; if(Math.abs(ent.x - ent.startX) > 100) ent.patrolDir *= -1; }
-                if(ent.behavior === 'chase' && this.playerRef) {
-                    const dx = this.playerRef.x - ent.x; const dy = this.playerRef.y - ent.y; const dist = Math.sqrt(dx*dx + dy*dy);
-                    if(dist < 200) { ent.x += (dx / dist) * ent.speed; ent.y += (dy / dist) * ent.speed; }
-                }
-                if(ent.behavior === 'bounce') { if(ent.grounded) { ent.dy = -10; ent.grounded = false; } }
-            },
-            runGame: function() {
-                const player = this.entities.find(e => e.type === 'player');
-                if(!player) { alert("Please place a 'Hero' first!"); return; } this.mode = 'PLAY'; this.playerRef = { ...player }; 
-                this.entities.forEach(e => { if(e.type !== 'player') e.startX = e.x; });
-                document.getElementById('btn-run').classList.add('hidden'); document.getElementById('btn-stop').classList.remove('hidden');
-                document.getElementById('nx-status').innerText = "RUNNING - WASD to Move"; document.getElementById('nx-status').style.color = "#05ffa1"; this.canvas.focus();
-            }, stopGame: function() {
-                this.mode = 'DESIGN'; this.playerRef = null;
-                document.getElementById('btn-run').classList.remove('hidden'); document.getElementById('btn-stop').classList.add('hidden');
-                document.getElementById('nx-status').innerText = "DESIGN MODE"; document.getElementById('nx-status').style.color = "#00e5ff";
-            },
-            loop: function() {
-                if(!this.active) return; requestAnimationFrame(() => this.loop());
-                const now = performance.now(); const dt = now - this.lastTime; this.lastTime = now;
-                this.ctx.fillStyle = '#050505'; this.ctx.fillRect(0, 0, 800, 600);
-                if(this.mode === 'PLAY') this.updatePhysics(dt);
-                this.entities.forEach(ent => this.drawEntity(ent)); this.updateParticles(dt);
-            },
-            updatePhysics: function(dt) {
-                const p = this.playerRef; if(!p) return;
-                if(this.keys['ArrowLeft'] || this.keys['a']) p.dx = -p.speed; else if(this.keys['ArrowRight'] || this.keys['d']) p.dx = p.speed; else p.dx = 0;
-                if((this.keys['ArrowUp'] || this.keys['w']) && p.grounded) { p.dy = -12; p.grounded = false; }
-                p.dy += p.gravity || 0.5; p.x += p.dx; p.y += p.dy; p.grounded = false;
-                if(p.x < 0) p.x = 0; if(p.x > 800 - p.w) p.x = 800 - p.w;
-                this.entities.forEach(ent => {
-                    if(ent === p || ent.type === 'player') return;
-                    if(p.x < ent.x + ent.w && p.x + p.w > ent.x && p.y < ent.y + ent.h && p.y + p.h > ent.y) {
-                        if(p.dy > 0 && p.y + p.h - p.dy <= ent.y) { p.y = ent.y - p.h; p.dy = 0; p.grounded = true; }
-                        if(ent.type === 'coin') { ent.visible = false; this.createParticles(ent.x, ent.y, ent.color, 20); }
-                        if(ent.type === 'enemy') { this.stopGame(); alert("Game Over!"); }
-                    }
-                });
-                if(p.y > 600) { this.stopGame(); alert("Fell into void."); }
-            },
-            drawEntity: function(ent) {
-                if(ent.visible === false) return; const ctx = this.ctx; const x = ent.x; const y = ent.y; const w = ent.w; const h = ent.h; const color = ent.color;
-                if(!this.view3D) {
-                    ctx.fillStyle = color; ctx.shadowBlur = 10; ctx.shadowColor = color;
-                    if(ent.type === 'player') { ctx.fillRect(x, y, w, h); ctx.fillStyle = 'white'; ctx.fillRect(x + w/2, y + 5, 6, 4); }
-                    else if (ent.type === 'enemy') { ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + w/2, y + h); ctx.lineTo(x + w, y); ctx.fill(); }
-                    else if (ent.type === 'coin') { ctx.beginPath(); ctx.arc(x + w/2, y + h/2, w/2, 0, Math.PI*2); ctx.fill(); }
-                    else { ctx.fillRect(x, y, w, h); }
-                    ctx.shadowBlur = 0;
-                } else {
-                    ctx.fillStyle = '#000'; ctx.fillRect(x + 5, y + 5, w, h); ctx.fillStyle = color; ctx.fillRect(x, y, w, h); ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.fillRect(x, y, w, h/3);
-                }
-                if(this.mode === 'DESIGN' && ent.behavior !== 'idle') { ctx.fillStyle = 'white'; ctx.font = '10px monospace'; ctx.fillText(ent.behavior, x, y - 5); }
-            },
-            createParticles: function(x, y, color, count) {
-                for(let i=0; i<count; i++) {
-                    this.particles.push({ x, y, dx: (Math.random()-0.5)*5, dy: (Math.random()-0.5)*5, life: 1.0, color });
-                }
-            },
-            updateParticles: function(dt) {
-                const ctx = this.ctx;
-                for(let i = this.particles.length - 1; i >= 0; i--) {
-                    const p = this.particles[i]; p.x += p.dx; p.y += p.dy; p.life -= 0.05;
-                    ctx.globalAlpha = p.life; ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, 3, 3);
-                    if(p.life <= 0) this.particles.splice(i, 1);
-                }
-                ctx.globalAlpha = 1.0;
-            },
-            clearLevel: function() { this.entities = []; this.log("Level Cleared."); },
-            log: function(msg) {
-                const out = document.getElementById('nx-console-out'); const div = document.createElement('div');
-                div.innerText = `> ${msg}`; out.appendChild(div); out.scrollTop = out.scrollHeight;
-            },
-            handleConsole: function(cmd) {
-                const el = document.getElementById('nx-console-in'); el.value = ''; const parts = cmd.split(' '); const command = parts[0].toLowerCase();
-                this.log(cmd);
-                if(command === 'help') { this.log("Commands: spawn, clear, list, run, stop"); }
-                else if(command === 'clear') this.clearLevel();
-                else if(command === 'run') this.runGame();
-                else if(command === 'stop') this.stopGame();
-                else if(command === 'spawn') { if(parts[1]) { document.getElementById('nx-type').value = parts[1]; this.placeEntityCenter(); } }
-                else { this.log("Unknown command."); }
-            },
-            generateLevelAI: async function() {
-                const prompt = document.getElementById('nx-ai-prompt').value; if(!prompt) return; this.log("Contacting AI Architect...");
-                try {
-                    const key = apiKeys[currentProvider]; if(!key) throw new Error("API Key Missing");
-                    const res = await fetch(PROVIDERS[currentProvider].url, {
-                        method: 'POST', headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ model: currentModel, messages: [{role:"system", content:"Generate JSON game data. Output ONLY an array of objects. Schema: [{type,x,y,w,h,color,behavior}]"}, {role:"user", content:`Create a 2D platformer level: ${prompt}`}], temperature: 0.7, max_tokens: 1000 })
+            engine: {
+                entities: [],
+                loop: null,
+                ctx: null,
+                init: function() {
+                    if(this.ctx) return;
+                    this.ctx = $('engine-canvas').getContext('2d');
+                    this.loop = setInterval(() => this.draw(), 16);
+                },
+                add: function(type) {
+                    this.init();
+                    const ent = {
+                        type: type,
+                        x: 400, y: 300,
+                        w: 20, h: 20,
+                        color: type === 'player' ? '#22c55e' : type === 'enemy' ? '#ef4444' : '#333',
+                        vx: (Math.random() - 0.5) * 4,
+                        vy: (Math.random() - 0.5) * 4
+                    };
+                    this.entities.push(ent);
+                },
+                start: function() { /* Logic running already */ },
+                stop: function() { clearInterval(this.loop); this.loop = null; },
+                draw: function() {
+                    this.ctx.fillStyle = '#050505';
+                    this.ctx.fillRect(0, 0, 800, 600);
+                    
+                    this.entities.forEach(e => {
+                        // Simple Physics
+                        e.x += e.vx;
+                        e.y += e.vy;
+                        if(e.x < 0 || e.x > 780) e.vx *= -1;
+                        if(e.y < 0 || e.y > 580) e.vy *= -1;
+                        
+                        // Draw
+                        this.ctx.fillStyle = e.color;
+                        this.ctx.fillRect(e.x, e.y, e.w, e.h);
                     });
-                    const data = await res.json(); const content = data.choices[0].message.content;
-                    const jsonMatch = content.match(/\[.*\]/s);
-                    if(jsonMatch) {
-                        const aiEntities = JSON.parse(jsonMatch[0]); this.entities = []; 
-                        aiEntities.forEach(e => {
-                            this.spawnEntity(e.x || 400, e.y || 300);
-                            const last = this.entities[this.entities.length-1];
-                            if(e.w) last.w = e.w; if(e.h) last.h = e.h; if(e.color) last.color = e.color; if(e.behavior) last.behavior = e.behavior;
-                            last.dx = 0; last.dy = 0; 
+                }
+            },
+
+            img: {
+                add: function(style) { $('img-prompt').value += `, ${style}`; },
+                gen: function() {
+                    const prompt = $('img-prompt').value; if(!prompt) return;
+                    $('img-loader').classList.remove('hidden');
+                    const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?nologo=true&seed=${Date.now()}`;
+                    const img = new Image();
+                    img.onload = () => {
+                        $('img-out').src = url;
+                        $('img-loader').classList.add('hidden');
+                        $('img-out').classList.remove('hidden');
+                    };
+                    img.src = url;
+                }
+            },
+
+            radio: {
+                debounce: null,
+                search: function(q) {
+                    clearTimeout(this.debounce);
+                    if(q.length < 3) return;
+                    this.debounce = setTimeout(async () => {
+                        const res = await fetch(`https://de1.api.radio-browser.info/json/stations/byname/${encodeURIComponent(q)}?limit=6`);
+                        const data = await res.json();
+                        $('radio-list').innerHTML = '';
+                        data.forEach(s => {
+                            const d = document.createElement('div');
+                            d.className = 'p-2 rounded hover:bg-white/5 cursor-pointer text-xs flex justify-between';
+                            d.innerHTML = `<span>${s.name}</span><span class="text-violet-400">${s.country}</span>`;
+                            d.onclick = () => {
+                                $('radio-audio').src = s.url_resolved;
+                                $('radio-audio').play();
+                                $('radio-title').innerText = s.name;
+                                $('radio-player').classList.remove('hidden');
+                            };
+                            $('radio-list').appendChild(d);
                         });
-                        this.log(`Generated ${aiEntities.length} entities.`);
-                    } else { throw new Error("No JSON found"); }
-                } catch(e) { this.log("Error: " + e.message); this.log("Ensure API Key is saved in Admin Panel."); }
+                    }, 400);
+                }
             },
-            updatePreview: function() {
-                this.selectedTool.type = document.getElementById('nx-type').value; this.selectedTool.w = parseFloat(document.getElementById('nx-w').value);
-                this.selectedTool.h = parseFloat(document.getElementById('nx-h').value); this.selectedTool.speed = parseFloat(document.getElementById('nx-speed').value);
-                this.selectedTool.gravity = parseFloat(document.getElementById('nx-grav').value); this.selectedTool.color = document.getElementById('nx-color').value;
-                this.selectedTool.behavior = document.getElementById('nx-behavior').value;
+
+            settings: {
+                ui: function() {
+                    const prov = $('sel-prov').value;
+                    const wrap = $('wrap-key');
+                    if(prov === 'puter') wrap.classList.add('opacity-40', 'pointer-events-none');
+                    else wrap.classList.remove('opacity-40', 'pointer-events-none');
+                },
+                save: function() {
+                    localStorage.setItem('nexus_prov', $('sel-prov').value);
+                    localStorage.setItem('nexus_key', $('txt-key').value);
+                    location.reload();
+                }
             }
         };
 
-        /* --- MAIN UI LOGIC --- */
-        const I18N = {
-            en: { init: "INITIALIZING NEURAL NETWORK...", mediaDeck: "MEDIA DECK", copyLog: "COPY LOG", profile: "PROFILE", kernel: "KERNEL", ide: "IDE", uplinkStatus: "Uplink Status: STANDBY", initBroadcast: "INITIALIZE BROADCAST", terminateLink: "TERMINATE LINK", p2pFiles: "P2P DATA CHANNEL", sendFile: "SEND FILE", scanFreq: ">> CONNECTING...", loadingGenres: "LOADING GENRES...", selectGenre: "SELECT GENRE", sysConsole: "System Console", apiKey: "API Key", saveReconnect: "SAVE & RECONNECT", resetSys: "EMERGENCY RESET", userId: "USER IDENTITY", upAvatar: "UPLOAD AVATAR", codename: "CODENAME", settings: "SETTINGS", language: "Language", genInvite: "GENERATE INVITE", saveId: "SAVE ID", cancel: "CANCEL", runPreview: "RUN PREVIEW", welcome: "System Online.", inviteGenerated: "Invite link copied!", inviteError: "Failed to generate invite.", fileSent: "File sent.", fileReceived: "File received: ", errorKey: "API Key Missing", errorAuth: "Invalid API Key", errorRate: "Rate Limit", searching: "Scanning...", generatingImg: "Rendering...", imgError: "Neural Network saturated.", radioBuffering: "BUFFERING...", radioError: "Stream Offline.", radioPlaying: "PLAYING", saveSuccess: "Identity Updated.", storageError: "Storage Full.", copilotThinking: "Analyzing Code...", gistSuccess: "Pushed successfully!", gistError: "Push Failed.", patchApplied: "Patch Applied." },
-            lt: { init: "INICIALIZUOJAMAS...", mediaDeck: "MEDIJOS", copyLog: "KOPIJUOTI", profile: "PROFILIS", kernel: "KERNELIS", ide: "IDE", uplinkStatus: "Ryšio Būklė", initBroadcast: "PRADĖTI", terminateLink: "NUTRAUKTI", p2pFiles: "P2P KANALAS", sendFile: "SIŲSTI", scanFreq: ">> JUNGIAMIS", loadingGenres: "ĘKELIAMAS...", selectGenre: "PASIRINKITE", sysConsole: "Konsolė", apiKey: "API Raktas", saveReconnect: "IŠSAUGOTI", resetSys: "ATSTATYTI", userId: "NAUDOTOJO ID", upAvatar: "ĮKELTI AVATARĄ", codename: "SLAPTAVARDIS", settings: "NUSTATYMAI", language: "Kalba", genInvite: "SUKURTI KVITIMĄ", saveId: "IŠSAUGOTI", cancel: "ATŠAUKTI", runPreview: "VYKDYTI", welcome: "Sistema veikia.", inviteGenerated: "Kvietimas nukopijuotas!", inviteError: "Klaida.", fileSent: "Išsiųsta.", fileReceived: "Gauta: ", errorKey: "Trūksta Rakto", errorAuth: "Blogas Raktas", errorRate: "Limitas", searching: "Skenuojama...", generatingImg: "Generuojamas...", imgError: "Tinklas užsikrovė.", radioBuffering: "BUFERIUOJAMA...", radioError: "Transliacija neveikia.", radioPlaying: "LEIDŽIAMA", saveSuccess: "Atnaujinta.", storageError: "Atmintis pilna.", copilotThinking: "Analizuojama...", gistSuccess: "Sėkmingai paduota!", gistError: "Nepavyko paduoti.", patchApplied: "Pataisymas taikytas." }
-        };
-        function t(key) { return I18N[currentLang][key] || key; }
-
-        const UI = {
-            boot: document.getElementById('boot-screen'), chat: document.getElementById('chat-container'), input: document.getElementById('user-input'), sendBtn: document.getElementById('send-btn'),
-            apiDot: document.getElementById('api-status-dot'), roomDisp: document.getElementById('room-display'), codeOverlay: document.getElementById('code-editor-overlay'),
-            codeArea: document.getElementById('code-area'), previewFrame: document.getElementById('preview-frame'), adminPanel: document.getElementById('admin-panel'),
-            apiKeyInput: document.getElementById('api-key-input'), profileModal: document.getElementById('profile-modal'), profilePreview: document.getElementById('profile-avatar-preview'),
-            profileNameInput: document.getElementById('edit-name'), videoGrid: document.getElementById('video-grid'), btnVideoEnable: document.getElementById('btn-enable-video'),
-            btnVideoDisable: document.getElementById('btn-disable-video'), radioGenres: document.getElementById('radio-genres-container'), radioStations: document.getElementById('radio-stations-container'),
-            radioSearchInput: document.getElementById('radio-search-input'), fileTransferUI: document.getElementById('file-transfer-ui'), progressBar: document.getElementById('progress-bar'),
-            transferStatus: document.getElementById('transfer-status'), transferProgress: document.getElementById('transfer-progress'), providerSelect: document.getElementById('provider-select'),
-            modelSelect: document.getElementById('model-select'), lblApiKey: document.getElementById('lbl-api-key'), copilotInput: document.getElementById('copilot-input'),
-            copilotChatLog: document.getElementById('copilot-chat-log'), copilotStatus: document.getElementById('copilot-status'),
-            ghTokenInput: document.getElementById('gh-token'), ghOwner: document.getElementById('gh-owner'), ghRepo: document.getElementById('gh-repo'), ghPath: document.getElementById('gh-path'),
-            repoSettings: document.getElementById('ide-repo-settings'), shaDisplay: document.getElementById('file-sha-display'), loadRepoInput: document.getElementById('load-repo-input')
-        };
-
-        const AudioFX = {
-            ctx: new (window.AudioContext || window.webkitAudioContext)(),
-            playTone: function(freq, type, duration, vol = 0.05) {
-                if(this.ctx.state === 'suspended') this.ctx.resume();
-                const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain();
-                osc.type = type; osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-                gain.gain.setValueAtTime(0, this.ctx.currentTime); gain.gain.linearRampToValueAtTime(vol, this.ctx.currentTime + 0.01);
-                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
-                osc.connect(gain); gain.connect(this.ctx.destination); osc.start(); osc.stop(this.ctx.currentTime + duration);
-            },
-            send: () => { AudioFX.playTone(800, 'sine', 0.1); setTimeout(() => AudioFX.playTone(1200, 'sine', 0.1), 50); },
-            receive: () => { AudioFX.playTone(600, 'triangle', 0.15); },
-            error: () => { AudioFX.playTone(150, 'sawtooth', 0.4, 0.1); },
-            system: () => { AudioFX.playTone(400, 'square', 0.05); setTimeout(() => AudioFX.playTone(600, 'square', 0.05), 50); },
-            boot: () => { let t = 0; [200, 300, 400, 600, 800, 1200].forEach((f, i) => { setTimeout(() => AudioFX.playTone(f, 'sine', 0.1), i * 100); }); }
-        };
-
-        async function fetchWithTimeout(resource, options = {}, timeout = 10000) {
-            const controller = new AbortController();
-            const id = setTimeout(() => controller.abort(), timeout);
-            const response = await fetch(resource, { ...options, signal: controller.signal });
-            clearTimeout(id); return response;
-        }
-
-        window.addEventListener('load', () => {
-            window.addEventListener('online', () => { updateStatus(false); addSystemMessage("NETWORK RESTORED. RECONNECTING...", "info"); forceReconnect(); });
-            window.addEventListener('offline', () => { updateStatus(false); addSystemMessage("NETWORK LOST. OFFLINE MODE.", "error"); });
-            document.addEventListener('visibilitychange', () => { isTabActive = !document.hidden; });
-            document.getElementById('lang-select').value = currentLang; UI.providerSelect.value = currentProvider; UI.ghTokenInput.value = ghToken; document.getElementById('pollinations-img-model').value = currentImgModel;
-            updateProviderSettings(); applyLanguageToDOM(); AudioFX.boot();
-            
-            // TYPEWRITER EFFECT FOR BOOT SCREEN
-            const bootText = document.getElementById('txt-init');
-            const bootFullText = t('init');
-            let charIndex = 0;
-            bootText.innerHTML = '';
-            const typeInterval = setInterval(() => {
-                if(charIndex < bootFullText.length) {
-                    bootText.innerHTML += bootFullText.charAt(charIndex);
-                    charIndex++;
-                } else {
-                    clearInterval(typeInterval);
-                    setTimeout(() => {
-                        UI.boot.style.opacity = '0';
-                        setTimeout(() => { UI.boot.remove(); initGalaxy(); startSystem(); }, 800);
-                    setTimeout(() => {
-                        document.getElementById('boot-title').innerText = "NEXUS AI"; // Reset title after boot
-                    }, 500);
-                }, 500);
-            }, 50);
-
-            UI.sendBtn.addEventListener('click', handleInput);
-            UI.input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); handleInput(); } });
-            document.getElementById('avatar-upload').addEventListener('change', handleAvatarUpload);
-            UI.copilotInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); askCopilot(); } });
-            const urlParams = new URLSearchParams(window.location.search); const inviteState = urlParams.get('s');
-            if(inviteState) { try { const data = JSON.parse(atob(inviteState)); if(data.r) currentRoom = data.r; window.history.replaceState({}, document.title, window.location.pathname); addSystemMessage("Invite applied.", "info"); } catch(e) {} }
-        });
-
-        function updateProviderSettings() {
-            currentProvider = UI.providerSelect.value; UI.modelSelect.innerHTML = '';
-            PROVIDERS[currentProvider].models.forEach(m => {
-                const opt = document.createElement('option'); opt.value = m.id; opt.innerText = m.name;
-                if(m.id === currentModel) opt.selected = true; UI.modelSelect.appendChild(opt);
-            });
-            const config = PROVIDERS[currentProvider]; UI.lblApiKey.innerText = config.keyLabel; UI.apiKeyInput.value = apiKeys[currentProvider] || "";
-            if(UI.modelSelect.value === "") { UI.modelSelect.selectedIndex = 0; currentModel = UI.modelSelect.value; }
-        }
-
-        function saveImgModel() { const model = document.getElementById('pollinations-img-model').value; currentImgModel = model; localStorage.setItem('nexus_img_model', model); addSystemMessage(`Image Engine set to: ${model}`, "info"); }
-        function applyLanguageToDOM() {
-            const map = { 'txt-init': 'init', 'lbl-media-deck': 'mediaDeck', 'btn-copy-log': 'copyLog', 'btn-profile': 'profile', 'btn-kernel': 'kernel', 'btn-ide': 'ide', 'txt-uplink-status': 'uplinkStatus', 'btn-init-video': 'initBroadcast', 'btn-term-video': 'terminateLink', 'lbl-p2p-files': 'p2pFiles', 'btn-send-file': 'sendFile', 'txt-scan-freq': 'scanFreq', 'txt-loading-genres': 'loadingGenres', 'txt-select-genre': 'selectGenre', 'lbl-sys-console': 'sysConsole', 'btn-save-api': 'saveReconnect', 'btn-reset-sys': 'resetSys', 'lbl-user-id': 'userId', 'btn-up-avatar': 'upAvatar', 'lbl-codename': 'codename', 'lbl-settings': 'settings', 'lbl-language': 'language', 'btn-gen-invite': 'genInvite', 'btn-save-id': 'saveId', 'btn-cancel': 'cancel', 'btn-run-preview': 'runPreview' };
-            for(const [id, key] of Object.entries(map)) { const el = document.getElementById(id); if(el) el.innerText = t(key); }
-            UI.input.placeholder = currentLang === 'en' ? "Command: /ai [prompt], /img [prompt], /radio [genre], /game [name]..." : "Komanda: /ai [užklausa], /img [užklausa], /radio [žanras], /game [žaidimas]...";
-            if(UI.radioSearchInput) { UI.radioSearchInput.placeholder = currentLang === 'en' ? "Search stations..." : "Ieškoti stočių..."; }
-        }
-
-        function changeLanguage(lang) { currentLang = lang; localStorage.setItem('nexus_lang', lang); applyLanguageToDOM(); }
-        function startSystem() { updateStatus(false); if(!apiKeys[currentProvider]) { setTimeout(() => { addSystemMessage("⚠️ " + t('errorKey'), "warning"); AudioFX.error(); toggleAdmin(); }, 1000); } else { forceReconnect(); } UI.input.focus(); }
-        function openKernelInput() { UI.input.focus(); UI.input.placeholder = ">> KERNEL QUERY ACTIVE..."; }
-
-        async function safeFetch(messages, jsonMode = false) {
-            const key = apiKeys[currentProvider]; if (!key) throw new Error(t('errorKey'));
-            const providerConfig = PROVIDERS[currentProvider];
-            try {
-                const response = await fetchWithTimeout(providerConfig.url, {
-                    method: "POST", headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({ model: currentModel, messages: messages, temperature: 0.6, max_tokens: 4096, response_format: jsonMode ? { "type": "json_object" } : undefined })
-                }, 15000); 
-                const data = await response.json();
-                if (!response.ok) { 
-                    const errMsg = data.error?.message || data.message || `HTTP ${response.status}`;
-                    console.error("API Error Details:", data); 
-                    if(response.status === 401) throw new Error(t('errorAuth')); 
-                    if(response.status === 429) throw new Error(t('errorRate')); 
-                    throw new Error(errMsg); 
-                }
-                return data.choices[0].message.content;
-            } catch (error) { console.error("Fetch Failed:", error); throw error; }
-        }
-
-        async function performWebSearch(query) {
-            const id = 'web-' + Date.now(); addThinking(id, "WEB"); AudioFX.system();
-            try {
-                const searchUrl = `https://en.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(query)}&limit=1&namespace=0&format=json&origin=*`;
-                const searchRes = await fetchWithTimeout(searchUrl, {}, 8000); const searchData = await searchRes.json();
-                if(!searchData[1] || searchData[1].length === 0) { removeThinking(id); addSystemMessage("No data found.", "warning"); return; }
-                const pageTitle = searchData[1][0]; const pageUrl = searchData[3][0];
-                const summaryUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(pageTitle)}`;
-                const summaryRes = await fetchWithTimeout(summaryUrl, {}, 8000);
-                const summaryData = await summaryRes.json(); removeThinking(id);
-                const div = document.createElement('div');
-                div.className = "flex gap-3 my-2 msg-anim";
-                div.innerHTML = `<div class="w-9 h-9 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-xs font-bold text-white shadow-lg ring-1 ring-white/20 shrink-0 border border-green-400/50">WEB</div><div class="flex-1 bg-slate-900/80 backdrop-blur-md border border-green-500/30 p-4 rounded-2xl rounded-tl-none text-sm text-gray-200 shadow-md"><div class="flex justify-between items-start mb-2"><h4 class="text-white font-bold text-sm font-header">${summaryData.title}</h4><a href="${pageUrl}" target="_blank" class="text-[10px] text-green-400 hover:text-green-300 border border-green-500/30 px-2 py-0.5 rounded">SOURCE</a></div><p class="text-xs text-gray-300 leading-relaxed markdown-body">${summaryData.extract}</p></div>`;
-                appendToChat(div);
-            } catch (e) { removeThinking(id); addSystemMessage("Archive Error: " + e.message, "error"); }
-        }
-
-        function createErrorCanvas() {
-            const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 512; 
-            const ctx = canvas.getContext('2d');
-            ctx.fillStyle = '#000'; ctx.fillRect(0, 0, 512, 512);
-            ctx.strokeStyle = 'rgba(0, 229, 255, 0.2)'; ctx.lineWidth = 2;
-            for(let i=0; i<512; i+=40) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 512); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(512, i); ctx.stroke(); }
-            ctx.font = 'bold 40px Orbitron'; ctx.textAlign = 'center'; ctx.fillStyle = '#ef4444'; ctx.fillText("OFFLINE", 256, 220);
-            ctx.font = '20px Rajdhani'; ctx.fillStyle = '#00e5ff'; ctx.fillText("NEURAL NET ERROR", 256, 260);
-            return new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.8));
-        }
-
-        async function generateImage(prompt, isFromAI = false, overrideUrl = null) {
-            const cleanPrompt = prompt.replace(/\[GENERATE_IMAGE:\s*/i, '').replace(']', '').trim();
-            const id = isFromAI ? 'ai-' + Date.now() : 'img-' + Date.now();
-            if(!isFromAI) addThinking(id, "IMG"); AudioFX.system();
-
-            let objectUrl = overrideUrl;
-
-            if(!objectUrl) {
-                const seed = Math.floor(Math.random() * 100000);
-                const encodedPrompt = encodeURIComponent(cleanPrompt + " photorealistic, 8k, high quality, detailed");
-                const imgModel = currentImgModel || 'flux';
-                const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true&seed=${seed}&model=${imgModel}&enhance=true`;
-                let isFallback = false;
-
-                try {
-                    let retries = 2; let blob = null;
-                    while(retries > 0) {
-                        try {
-                            const response = await fetchWithTimeout(imageUrl, {}, 12000); 
-                            if (response.ok) {
-                                blob = await response.blob();
-                                if (blob.type.startsWith('image/')) break;
-                            }
-                            throw new Error(`HTTP ${response.status}`);
-                        } catch(e) {
-                            retries--;
-                            if(retries <= 0) throw e;
-                            await new Promise(r => setTimeout(r, 1000));
-                        }
-                    }
-                    if (!blob) throw new Error("Generation failed");
-                    objectUrl = URL.createObjectURL(blob);
-                } catch (error) {
-                    console.warn("Image Gen Failed, using Local Fallback:", error);
-                    isFallback = true;
-                    objectUrl = URL.createObjectURL(await createErrorCanvas());
-                }
-            }
-
-            removeThinking(id);
-            const div = document.createElement('div');
-            div.className = "flex gap-3 my-2 msg-anim";
-            const label = overrideUrl ? "PLAYGROUND A GENERATED" : "NEURAL IMAGERY GENERATED";
-            const borderColor = "border-purple-500/30";
-            
-            // DOWNLOAD BUTTON IN CHAT
-            const downloadBtnHtml = `<button onclick="downloadImage('${objectUrl}')" class="mt-3 px-3 py-1.5 rounded bg-black/50 hover:bg-black/70 text-cyan-400 text-xs font-mono border border-cyan-500/30 transition-colors">💾 SAVE</button>`;
-
-            div.innerHTML = `<div class="w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-xs font-bold text-white shadow-lg ring-1 ring-white/20 shrink-0 border border-purple-400/50">IMG</div><div class="flex-1 bg-slate-900/80 backdrop-blur-md border ${borderColor} p-3 rounded-2xl rounded-tl-none text-sm text-gray-200 shadow-md"><div class="text-[10px] text-purple-400 font-mono mb-1 flex justify-between"><span>${label}</span><span class="text-green-400">${currentImgModel.toUpperCase()} MODEL</span></div><div class="generated-image-container"><img src="${objectUrl}" alt="${cleanPrompt}" loading="lazy"></div><div class="mt-2 text-[10px] text-gray-400 font-mono">"${cleanPrompt}"</div>${downloadBtnHtml}</div>`;
-            appendToChat(div);
-        }
-
-        function downloadImage(url) {
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `nexus-ai-${Date.now()}.jpg`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-        }
-
-        async function startGameCreator() { NX.toggleOverlay(); }
-        function resetGamePreview() { NX.clearLevel(); NX.placeEntityCenter(); }
-
-        async function handleInput() {
-            const text = UI.input.value.trim(); if (!text) return; UI.input.value = ''; AudioFX.send();
-            if (text.startsWith('/')) { handleCommand(text); return; }
-            if (!mqttClient || !mqttClient.isConnected()) {
-                addUserMessage(text, true, userProfile.name, userProfile.avatar); addSystemMessage("⚠️ OFFLINE: Message queued locally.", "warning"); addSystemMessage("Retrying connection...", "info"); forceReconnect(); return;
-            }
-            addUserMessage(text, true, userProfile.name, userProfile.avatar);
-            try { 
-                const payload = JSON.stringify({ type: 'chat', user: userProfile.name, avatar: userProfile.avatar, text: text, ts: Date.now() }); 
-                const topic = currentRoom === "public" ? "termos/public" : `termos/rooms/${currentRoom}`; 
-                const msg = new Paho.MQTT.Message(payload); msg.destinationName = topic; msg.qos = 1; mqttClient.send(msg); 
-            } catch(e) { console.error("MQTT Send Error", e); addSystemMessage("Transmission failed.", "error"); }
-        }
-
-        function handleCommand(cmdStr) {
-            const parts = cmdStr.split(' '); const cmd = parts[0].toLowerCase(); const arg = cmdStr.substring(cmd.length + 1).trim();
-            switch(cmd) {
-                case '/ai': if(arg) processAICommand(arg); break;
-                case '/web': case '/wiki': if(arg) performWebSearch(arg); else addSystemMessage("Usage: /web [topic]", "warning"); break;
-                case '/img': case '/image': if(arg) generateImage(arg); else addSystemMessage("Usage: /img [prompt]", "warning"); break;
-                case '/radio': if(arg) askAIForRadio(arg); break;
-                case '/game': startGameCreator(); break;
-                case '/join': if(parts[1]) joinRoom(parts[1]); break;
-                case '/clear': UI.chat.innerHTML = ''; break;
-                case '/kernel': triggerKernelThought(); break;
-                case '/video': toggleMedia(); break;
-                case '/playground': togglePlayground(); break;
-                case '/terminal': toggleTerminal(); break;
-                default: addSystemMessage(`Unknown: ${cmd}`, "warning"); AudioFX.error();
-            }
-        }
-
-        async function processAICommand(prompt) {
-            if (!apiKeys[currentProvider]) { addSystemMessage("⚠️ " + t('errorKey'), "error"); AudioFX.error(); toggleAdmin(); return; }
-            addUserMessage(prompt, true, userProfile.name, userProfile.avatar);
-            const id = 'ai-' + Date.now(); addThinking(id, "AI");
-            try {
-                const context = `User: ${userProfile.name}, Room: ${currentRoom}, Lang: ${currentLang}`;
-                const messages = [{ role: "system", content: `${SYSTEM_MANIFEST_EN} ${context}. Reply in ${currentLang === 'en' ? 'English' : 'Lithuanian'}.` }, { role: "user", content: prompt }];
-                const reply = await safeFetch(messages);
-                if (reply.includes("[GENERATE_IMAGE:")) {
-                    const imgPromptMatch = reply.match(/\[GENERATE_IMAGE:\s*(.*?)\]/);
-                    if (imgPromptMatch && imgPromptMatch[1]) { removeThinking(id); generateImage(imgPromptMatch[1], true); return; }
-                }
-                removeThinking(id); addAIMessage(reply);
-            } catch (e) { removeThinking(id); addSystemMessage("AI Error: " + e.message, "error"); if(e.message.includes("401")) setTimeout(() => toggleAdmin(), 1000); }
-        }
-
-        function appendToChat(element) { UI.chat.appendChild(element); if (UI.chat.children.length > 100) UI.chat.removeChild(UI.chat.firstChild); scrollToBottom(); }
-
-        function addSystemMessage(text, type = 'info') {
-            const div = document.createElement('div'); div.className = "flex justify-center my-4 z-10 msg-anim";
-            let bg = "bg-cyan-900/20 border-cyan-500/20", icon = "ℹ️";
-            if(type === 'error') { bg = "bg-red-900/20 border-red-500/30"; icon = "⚠️"; }
-            if(type === 'warning') { bg = "bg-yellow-900/20 border-yellow-500/20"; icon = "⚡"; }
-            div.innerHTML = `<span class="px-4 py-1.5 rounded-full text-[10px] font-bold tracking-widest text-gray-300 border ${bg} flex items-center gap-2 backdrop-blur-md shadow-lg">${icon} ${text}</span>`;
-            appendToChat(div);
-        }
-
-        function addUserMessage(text, isMe, senderName, senderAvatar) {
-            const div = document.createElement('div'); div.className = `flex gap-3 my-2 msg-anim ${isMe ? 'flex-row-reverse' : 'flex-row'}`;
-            let avatarHTML = `<div class="w-9 h-9 rounded-full bg-gray-700 flex items-center justify-center text-[10px] font-bold text-white shrink-0 border border-white/10">?</div>`;
-            if (senderAvatar) { if(senderAvatar.startsWith('data:') || senderAvatar.startsWith('http')) avatarHTML = `<div class="w-9 h-9 rounded-full overflow-hidden border border-white/20 shrink-0 shadow-md"><img src="${senderAvatar}" class="w-full h-full object-cover"></div>`; else avatarHTML = `<div class="w-9 h-9 rounded-full bg-gray-800 flex items-center justify-center text-lg shrink-0 border border-white/10">${senderAvatar}</div>`; }
-            const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            if(isMe) { div.innerHTML = `${avatarHTML}<div class="flex flex-col items-end max-w-[80%]"><div class="bg-gradient-to-r from-cyan-600 to-blue-600 text-white p-3 rounded-2xl rounded-tr-none text-sm shadow-md border border-cyan-500/30 break-words">${escapeHtml(text)}</div><div class="text-[9px] text-gray-500 mt-1 mr-1 font-mono">${time}</div></div>`; }
-            else { div.innerHTML = `${avatarHTML}<div class="flex flex-col items-start max-w-[80%]"><div class="flex items-center gap-2 mb-1"><span class="text-[10px] text-cyan-400 font-bold font-header tracking-wide">${escapeHtml(senderName)}</span></div><div class="bg-white/10 border border-white/10 text-gray-100 p-3 rounded-2xl rounded-tl-none text-sm shadow-md break-words backdrop-blur-sm">${escapeHtml(text)}</div><div class="text-[9px] text-gray-500 mt-1 ml-1 font-mono">${time}</div></div>`; }
-            appendToChat(div);
-        }
-
-        function addAIMessage(text) {
-            const div = document.createElement('div'); div.className = "flex gap-3 my-2 msg-anim";
-            const htmlContent = marked.parse(text);
-            div.innerHTML = `<div class="w-9 h-9 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-xs font-bold text-white shadow-lg ring-1 ring-white/20 shrink-0 border border-cyan-400/50">AI</div><div class="flex-1 bg-slate-900/80 backdrop-blur-md border border-cyan-500/30 p-4 rounded-2xl rounded-tl-none text-sm text-gray-200 shadow-md"><div class="markdown-body text-xs leading-relaxed">${htmlContent}</div></div>`;
-            appendToChat(div);
-            requestAnimationFrame(() => document.querySelectorAll('pre code').forEach((el) => hljs.highlightElement(el)));
-        }
-
-        function addThinking(id, label = "AI") {
-            const div = document.createElement('div'); div.id = id;
-            div.className = "flex gap-3 my-2 msg-anim";
-            div.innerHTML = `<div class="w-9 h-9 rounded-full bg-gray-700 flex items-center justify-center animate-pulse text-[10px] font-bold border border-white/10">${label}</div><div class="flex items-center gap-2 h-10 bg-white/5 px-4 rounded-full border border-white/5"><span class="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce"></span><span class="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></span><span class="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></span><span class="text-[10px] text-cyan-400 ml-2 font-mono">PROCESSING</span></div>`;
-            appendToChat(div);
-        }
-
-        function removeThinking(id) { const el = document.getElementById(id); if(el) el.remove(); }
-        function escapeHtml(text) { if(!text) return ""; return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
-        function scrollToBottom() { UI.chat.scrollTo({ top: UI.chat.scrollHeight, behavior: 'smooth' }); }
-
-        function updateStatus(active) {
-            if(active) { UI.apiDot.className = "w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_#22d3ee] animate-pulse"; UI.roomDisp.innerText = currentRoom === "public" ? "PUBLIC GRID" : `ROOM: ${currentRoom.toUpperCase()}`; UI.roomDisp.classList.add("text-cyan-400"); UI.roomDisp.classList.remove("text-red-500"); }
-            else { UI.apiDot.className = "w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_#ef4444]"; UI.roomDisp.innerText = "OFFLINE"; UI.roomDisp.classList.remove("cyan-400"); UI.roomDisp.classList.add("text-red-500"); }
-        }
-
-        function copySystemLog() { const logs = document.querySelectorAll('#chat-container > div'); let text = "LOG:\n"; logs.forEach(el => { const c = el.innerText.replace(/\n+/g, ' ').trim(); if(c && !c.includes("PROCESSING")) text += `${c}\n`; }); navigator.clipboard.writeText(text).then(() => { addSystemMessage("Log copied.", "info"); AudioFX.system(); }).catch(err => addSystemMessage("Copy failed.", "error")); }
-        function toggleAdmin() { const p = UI.adminPanel; if(p.classList.contains('hidden-ui')) { p.classList.remove('hidden-ui'); p.classList.add('flex-ui'); updateProviderSettings(); } else { p.classList.add('hidden-ui'); p.classList.remove('flex-ui'); } }
-        function saveApiKey() {
-            const key = UI.apiKeyInput.value.trim(); const provider = UI.providerSelect.value; const model = UI.modelSelect.value;
-            if(key) { apiKeys[provider] = key; localStorage.setItem('nexus_api_keys', JSON.stringify(apiKeys)); }
-            const ght = UI.ghTokenInput.value.trim(); if(ght) { ghToken = ght; localStorage.setItem('nexus_gh_token', ghToken); }
-            currentProvider = provider; currentModel = model; localStorage.setItem('nexus_provider', currentProvider); localStorage.setItem('nexus_model', currentModel);
-            updateStatus(!!apiKeys[currentProvider]); addSystemMessage(`Core Updated: ${provider}`, "info"); forceReconnect(); toggleAdmin();
-        }
-        function resetSystem() { localStorage.clear(); location.reload(); }
-
-        function compressImage(file, callback) {
-            const reader = new FileReader(); reader.readAsDataURL(file);
-            reader.onload = (e) => {
-                const img = new Image(); img.src = e.target.result;
-                img.onload = () => {
-                    const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d'); const MAX_WIDTH = 200; const MAX_HEIGHT = 200; let width = img.width; let height = img.height;
-                    if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
-                    canvas.width = width; canvas.height = height; ctx.drawImage(img, 0, 0, width, height);
-                    callback(canvas.toDataURL('image/jpeg', 0.7));
-                };
-            };
-        }
-        function handleAvatarUpload(e) {
-            const file = e.target.files[0]; if (!file) return;
-            compressImage(file, (compressedDataUrl) => { tempAvatarData = compressedDataUrl; UI.profilePreview.innerHTML = `<img src="${tempAvatarData}" class="w-full h-full object-cover">`; });
-        }
-        function toggleProfile() {
-            const p = UI.profileModal; if(p.classList.contains('hidden-ui')) {
-                UI.profileNameInput.value = userProfile.name;
-                if(userProfile.avatar.startsWith('data:') || userProfile.avatar.startsWith('http')) UI.profilePreview.innerHTML = `<img src="${userProfile.avatar}" class="w-full h-full object-cover">`; else UI.profilePreview.innerText = userProfile.avatar;
-                tempAvatarData = null; p.classList.remove('hidden-ui'); p.classList.add('flex-ui');
-            } else { p.classList.add('hidden-ui'); p.classList.remove('flex-ui'); }
-        }
-        function saveProfile() {
-            const newName = UI.profileNameInput.value.trim(); if(newName) userProfile.name = newName; if(tempAvatarData) userProfile.avatar = tempAvatarData;
-            try { localStorage.setItem('nexus_username', userProfile.name); localStorage.setItem('nexus_avatar', userProfile.avatar); addSystemMessage(t('saveSuccess'), "info"); toggleProfile(); }
-            catch (e) { if (e.name === 'QuotaExceededError' || e.code === 22) { try { localStorage.setItem('nexus_username', userProfile.name); addSystemMessage(t('storageError'), "error"); } catch(e2) {} } else { console.error(e); } }
-        }
-        function generateInviteLink() { try { const data = { r: currentRoom }; const b64 = btoa(JSON.stringify(data)); navigator.clipboard.writeText(`${window.location.origin}${window.location.pathname}?s=${b64}`).then(() => addSystemMessage(t('inviteGenerated'), "info")); } catch(e) { addSystemMessage(t('inviteError'), "error"); } }
-        function shareApp() { if (navigator.share) navigator.share({ title: 'Nexus AI', text: 'Join session.', url: window.location.href }).catch(()=>{}); else generateInviteLink(); }
-
-        /* --- ROBUST FALLBACK: MQTT MANAGER --- */
-        function forceReconnect() { if(mqttReconnectTimeout) clearTimeout(mqttReconnectTimeout); connectMQTT(); }
-        function getAvailableBrokers() { const isSecure = window.location.protocol === 'https:'; return ALL_BROKERS.filter(b => (isSecure && b.ssl) || (!isSecure)); }
-        function connectMQTT() {
-            if (typeof Paho === 'undefined') { addSystemMessage("MQTT Library missing. Check connection.", "error"); return; }
-            if (mqttClient && mqttClient.isConnected()) return; 
-            if (mqttClient) { try { mqttClient.disconnect(); } catch(e){} mqttClient = null; }
-            const availableBrokers = getAvailableBrokers();
-            if (availableBrokers.length === 0) { addSystemMessage("No compatible brokers for this protocol.", "error"); return; }
-            const safeIdx = currentBrokerIdx % availableBrokers.length; const broker = availableBrokers[safeIdx];
-            UI.apiDot.className = "w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse shadow-[0_0_8px_yellow]"; UI.roomDisp.innerText = `CONNECTING (${broker.name})...`;
-            console.log(`Attempting connection to ${broker.name} (${broker.host})`);
-            const clientId = "nexus_" + Math.random().toString(16).substr(2, 8);
-            mqttClient = new Paho.MQTT.Client(broker.host, broker.port, broker.path, clientId);
-            mqttClient.onConnectionLost = (responseObject) => {
-                console.warn("Connection Lost:", responseObject.errorMessage);
-                if (responseObject.errorCode !== 0) {
-                    currentBrokerIdx = (currentBrokerIdx + 1) % availableBrokers.length;
-                    updateStatus(false);
-                    setTimeout(connectMQTT, 2000); 
-                }
-            };
-            mqttClient.onMessageArrived = (message) => {
-                try {
-                    const payload = JSON.parse(message.payloadString);
-                    if (String(payload.user) === String(userProfile.name)) return; 
-                    if (payload.type === 'chat') { AudioFX.receive(); addUserMessage(payload.text, false, payload.user, payload.avatar); }
-                    else if (payload.type === 'join') { addSystemMessage(`${payload.user} entered.`, "info"); }
-                    else if (payload.type === 'webrtc') handleWebRTCMessage(payload);
-                } catch(e) { console.error("Message Parse Error", e); }
-            };
-            const options = { timeout: 10, useSSL: broker.ssl, keepAliveInterval: 30, cleanSession: true, onSuccess: () => {
-                console.log("Connected to", broker.name); currentBrokerIdx = 0; updateStatus(true);
-                const topic = currentRoom === "public" ? "termos/public" : `termos/rooms/${currentRoom}`;
-                mqttClient.subscribe(topic, { qos: 1 }); 
-                const presence = new Paho.MQTT.Message(JSON.stringify({ type: 'join', user: userProfile.name, avatar: userProfile.avatar })); presence.destinationName = topic; mqttClient.send(presence);
-                addSystemMessage(`Connected via ${broker.name}`, "info");
-            }, onFailure: (err) => {
-                console.error("Connect Failed:", err); currentBrokerIdx = (currentBrokerIdx + 1) % availableBrokers.length; updateStatus(false); setTimeout(connectMQTT, 2000);
-            } };
-            try { mqttClient.connect(options); }
-            catch(e) { console.error("Connection Exception", e); currentBrokerIdx = (currentBrokerIdx + 1) % availableBrokers.length; updateStatus(false); setTimeout(connectMQTT, 2000); }
-        }
-
-        function joinRoom(roomName) {
-            if(roomName === currentRoom) return;
-            if(mqttClient && mqttClient.isConnected()) {
-                const oldTopic = currentRoom === "public" ? "termos/public" : `termos/rooms/${currentRoom}`;
-                mqttClient.unsubscribe(oldTopic);
-                mqttClient.send(new Paho.MQTT.Message(JSON.stringify({ type: 'leave', user: userProfile.name, room: oldTopic })));
-            }
-            stopWebRTC(); currentRoom = roomName; 
-            if (mqttClient && mqttClient.isConnected()) {
-                const newTopic = `termos/rooms/${currentRoom}`;
-                mqttClient.subscribe(newTopic, { qos: 1 });
-                mqttClient.send(new Paho.MQTT.Message(JSON.stringify({ type: 'join', user: userProfile.name, avatar: userProfile.avatar })));
-                addSystemMessage(`Joined: ${roomName}`, "info");
-            }
-        }
-
-        async function triggerKernelThought() {
-            if(!apiKeys[currentProvider]) { toggleAdmin(); return; }
-            const id = 'kernel-' + Date.now(); addThinking(id, "OS"); AudioFX.system();
-            try {
-                const messages = [{ role: "system", content: `You are Nexus Kernel. Time: ${new Date().toLocaleTimeString()}. Reply in ${currentLang}.` }, { role: "user", content: "System status." }];
-                const reply = await safeFetch(messages);
-                removeThinking(id);
-                const div = document.createElement('div');
-                div.className = "flex gap-3 my-4 msg-anim border border-cyan-500/30 bg-cyan-900/10 p-4 rounded-xl relative overflow-hidden backdrop-blur-md";
-                div.innerHTML = `<div class="absolute top-0 left-0 w-1 h-full bg-cyan-500 shadow-[0_0_10px_#00e5ff]"></div><div class="relative z-10"><div class="text-[10px] text-cyan-400 font-bold tracking-widest mb-2">KERNEL_THOUGHT.EXE</div><div class="text-sm text-gray-200 font-light leading-relaxed font-mono">${escapeHtml(reply)}</div></div>`;
-                appendToChat(div);
-            } catch (e) { removeThinking(id); addSystemMessage("Kernel Panic: " + e.message, "error"); }
-        }
-
-        /* --- UPDATED RADIO SYSTEM (LOCAL + AI) --- */
-        let audioObj = new Audio(); let currentPlayingStationUrl = null; let currentPlayingEl = null;
-        let searchTimeout = null;
-        if(UI.radioSearchInput) {
-            UI.radioSearchInput.removeEventListener('input', null);
-            UI.radioSearchInput.addEventListener('input', (e) => {
-                const query = e.target.value.trim(); clearTimeout(searchTimeout);
-                if(query.length < 2) return; UI.radioStations.innerHTML = '<div class="text-gray-500 text-[9px] text-center py-4">SCANNING...</div>';
-                searchTimeout = setTimeout(() => searchStationsByName(query), 1000);
-            });
-        }
-        async function askAIForRadio(genre) {
-            const id = 'radio-ai-' + Date.now(); addThinking(id, "AI");
-            try {
-                const prompt = `Find 5 reliable online radio streaming MP3 URLs for genre: ${genre}. Return ONLY JSON: [{name: '...', url: 'http://...', genre: '${genre}'}].`;
-                const messages = [{ role: "system", content: SYSTEM_MANIFEST_EN }, { role: "user", content: prompt }];
-                const reply = await safeFetch(messages);
-                const jsonMatch = reply.match(/\[.*\]/s);
-                const stations = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
-                removeThinking(id);
-                if(stations.length > 0) { renderStationList(stations); addSystemMessage(`Found ${stations.length} stations for ${genre}`, "info"); }
-                else { addSystemMessage("AI could not find stations. Using Local DB.", "warning"); renderStationList(STATIONS_DB); }
-            } catch (e) { removeThinking(id); addSystemMessage("AI Radio Search Failed. Using Local DB.", "error"); renderStationList(STATIONS_DB); }
-        }
-        async function searchStationsByName(name) { 
-            const localResults = STATIONS_DB.filter(s => s.name.toLowerCase().includes(name.toLowerCase()));
-            if(localResults.length > 0) { renderStationList(localResults); return; }
-            addSystemMessage(`Searching AI for: ${name}...`, "info"); await askAIForRadio(name);
-        }
-        function switchMediaTab(tab) { 
-            document.getElementById('tab-video').classList.add('hidden'); document.getElementById('tab-radio').classList.add('hidden'); 
-            document.getElementById('tab-'+tab).classList.remove('hidden'); 
-            const isActive = (t) => t === tab ? "bg-white/10 text-cyan-300" : "text-gray-400 hover:text-white"; 
-            document.getElementById('tab-btn-video').className = `flex-1 py-1.5 text-[10px] font-bold rounded border border-white/5 transition-all ${isActive('video')}`; 
-            document.getElementById('tab-btn-radio').className = `flex-1 py-1.5 text-[10px] font-bold rounded border border-white/5 transition-all ${isActive('radio')}`; 
-            if(tab === 'radio') { renderRadioButtons(); UI.radioSearchInput.focus(); } 
-        }
-        function renderRadioButtons() {
-            UI.radioGenres.innerHTML = '';
-            const genres = ["LoFi", "Synthwave", "Techno", "Classical", "Rock", "Ambient"];
-            genres.forEach(g => {
-                const chip = document.createElement('div'); chip.className = 'genre-chip'; chip.innerText = g; 
-                chip.onclick = () => { document.querySelectorAll('.genre-chip').forEach(c => c.classList.remove('active')); chip.classList.add('active'); renderStationList(STATIONS_DB.filter(s => s.genre.includes(g))); }; 
-                UI.radioGenres.appendChild(chip); 
-            });
-        }
-        function toggleMedia() { const deck = document.getElementById('media-deck'); deck.classList.toggle('active'); if(deck.classList.contains('active') && UI.radioGenres.children.length <= 1) renderRadioButtons(); }
-        function renderStationList(stations) { UI.radioStations.innerHTML = ''; if(stations.length === 0) { UI.radioStations.innerHTML = '<div class="text-gray-500 text-[9px] text-center py-4">NO STATIONS</div>'; return; } stations.forEach(s => { const div = document.createElement('div'); div.className = 'station-item'; const favicon = s.favicon ? `<img src="${s.favicon}" class="w-4 h-4 rounded mr-2 bg-black" onerror="this.style.display='none'">` : ''; div.innerHTML = `<div class="flex items-center">${favicon}<div><div class="station-name">${s.name}</div><div class="text-[8px] text-gray-500">${s.country || ''}</div></div></div><div class="station-bitrate">${Math.round(s.bitrate / 1000)}kbps</div>`; div.onclick = () => playRadioStation(div, s.url, s.name); UI.radioStations.appendChild(div); }); }
-        async function playRadioStation(el, url, name) { 
-            if(AudioFX.ctx.state === 'suspended') AudioFX.ctx.resume();
-            document.querySelectorAll('.station-item').forEach(i => i.classList.remove('playing')); 
-            if (currentPlayingStationUrl === url && !audioObj.paused) { audioObj.pause(); currentPlayingStationUrl = null; currentPlayingEl = null; return; } 
-            const originalName = el.querySelector('.station-name').innerText; el.querySelector('.station-name').innerText = `${t('radioBuffering')}...`; el.classList.add('playing'); 
-            if (audioObj.src) { audioObj.pause(); audioObj.currentTime = 0; } audioObj.crossOrigin = "anonymous"; audioObj.src = url; 
-            audioObj.onerror = () => { el.querySelector('.station-name').innerText = originalName; el.classList.remove('playing'); addSystemMessage(`Radio Error: ${name} (Stream Dead)`, "error"); AudioFX.error(); currentPlayingStationUrl = null; }; 
-            audioObj.onplaying = () => { el.querySelector('.station-name').innerText = `${t('radioPlaying')} ▶`; el.classList.add('playing'); addSystemMessage(`Tuning into: ${name}`, "info"); }; 
-            try { await audioObj.play(); currentPlayingStationUrl = url; currentPlayingEl = el; } 
-            catch (e) { el.querySelector('.station-name').innerText = originalName; el.classList.remove('playing'); console.error(e); addSystemMessage("Playback blocked.", "error"); } 
-        }
-
-        /* --- VIDEO & P2P --- */
-        let localStream = null; const peers = {}; const dataChannels = {}; 
-        const rtcConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }, { urls: 'stun:global.stun.twilio.com:3478' }] };
-        async function startWebRTC() {
-            try { const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 360 }, audio: true }); localStream = stream;
-                UI.btnVideoEnable.classList.add('hidden-ui'); UI.btnVideoDisable.classList.remove('hidden-ui'); UI.fileTransferUI.classList.remove('hidden-ui');
-                addLocalVideo(stream); addSystemMessage("📹 Uplink Established.", "info"); broadcastWebRTCSignal('video_ready', {});
-            } catch (err) { console.error(err); addSystemMessage("Hardware Error: " + err.message, "error"); }
-        }
-        function stopWebRTC() {
-            if (localStream) { localStream.getTracks().forEach(track => track.stop()); localStream = null; }
-            Object.values(peers).forEach(pc => pc.close()); for (let key in peers) delete peers[key]; for (let key in dataChannels) delete dataChannels[key];
-            UI.videoGrid.innerHTML = ''; UI.btnVideoDisable.classList.add('hidden-ui'); UI.btnVideoEnable.classList.remove('hidden-ui'); UI.fileTransferUI.classList.add('hidden-ui');
-            addSystemMessage("📹 Uplink Terminated.", "warning"); broadcastWebRTCSignal('video_stop', {});
-        }
-        function createPeerConnection(remoteUser) {
-            const pc = new RTCPeerConnection(rtcConfig); peers[remoteUser] = pc; const dc = pc.createDataChannel("fileTransfer"); setupDataChannel(dc, remoteUser);
-            pc.onicecandidate = (e) => { if (e.candidate) broadcastWebRTCSignal('candidate', { candidate: e.candidate, target: remoteUser }); };
-            pc.ontrack = (e) => {
-                const elId = `vid-remote-${remoteUser}`; if (!document.getElementById(elId)) {
-                    const div = document.createElement('div'); div.id = elId; div.className = "video-container remote";
-                    div.innerHTML = `<video autoplay playsinline muted></video><div class="remote-label">${remoteUser}</div>`; div.querySelector('video').srcObject = e.streams[0];
-                    UI.videoGrid.appendChild(div); UI.videoGrid.classList.remove('hidden'); addSystemMessage(`Visual link: ${remoteUser}`, "info");
-                }
-            };
-            pc.ondatachannel = (e) => setupDataChannel(e.channel, remoteUser); if (localStream) localStream.getTracks().forEach(track => pc.addTrack(track, localStream)); return pc;
-        }
-        function setupDataChannel(dc, remoteUser) {
-            dataChannels[remoteUser] = dc;
-            dc.onmessage = async (event) => {
-                const data = event.data;
-                if (typeof data === 'string') { const meta = JSON.parse(data); receiveFileBuffer(remoteUser, meta); } else { processFileChunk(remoteUser, data); }
-            };
-        }
-        const fileReceivers = {};
-        function receiveFileBuffer(remoteUser, meta) { fileReceivers[remoteUser] = { name: meta.name, type: meta.type, size: meta.size, received: 0, chunks: [] }; UI.transferProgress.classList.remove('hidden'); UI.transferStatus.innerText = `Receiving: ${meta.name} (0%)`; }
-        function processFileChunk(remoteUser, chunk) {
-            const receiver = fileReceivers[remoteUser]; if (!receiver) return; receiver.chunks.push(chunk); receiver.received += chunk.byteLength;
-            const percent = Math.floor((receiver.received / receiver.size) * 100); UI.progressBar.style.width = percent + '%'; UI.transferStatus.innerText = `Receiving: ${receiver.name} (${percent}%)`;
-            if (receiver.received >= receiver.size) {
-                const blob = new Blob(receiver.chunks, { type: receiver.type }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = receiver.name; a.click();
-                addSystemMessage(`📁 ${t('fileReceived')} ${receiver.name}`, "info"); delete fileReceivers[remoteUser]; UI.transferProgress.classList.add('hidden'); UI.progressBar.style.width = '0%';
-            }
-        }
-        async function handleFileSelect(input) {
-            const file = input.files[0]; if (!file) return; const targetPeer = Object.keys(dataChannels)[0]; if (!targetPeer) { addSystemMessage("No active P2P connection.", "error"); return; }
-            const dc = dataChannels[targetPeer]; if (dc && dc.readyState === 'open') {
-                dc.send(JSON.stringify({ name: file.name, type: file.type, size: file.size })); const reader = new FileReader(); let offset = 0; const chunkSize = 16384;
-                UI.transferProgress.classList.remove('hidden'); UI.transferStatus.innerText = `Sending: ${file.name} (0%)`;
-                reader.onload = (e) => { dc.send(e.target.result); offset += e.target.result.byteLength; const percent = Math.floor((offset / file.size) * 100); UI.progressBar.style.width = percent + '%'; UI.transferStatus.innerText = `Sending: ${file.name} (${percent}%)`; if (offset < file.size) readSlice(offset); else { addSystemMessage(t('fileSent'), "info"); setTimeout(() => UI.transferProgress.classList.add('hidden'), 2000); input.value = ''; } };
-                const readSlice = (o) => { const slice = file.slice(o, o + chunkSize); reader.readAsArrayBuffer(slice); }; readSlice(0);
-            } else { addSystemMessage("Data channel not ready.", "error"); }
-        }
-        function handleWebRTCMessage(data) {
-            const sender = data.user; if (sender === userProfile.name) return;
-            switch (data.signal) { case 'video_ready': if (localStream && !peers[sender]) initiateCall(sender); break; case 'video_stop': handleLeaveCall(sender); break; case 'offer': handleOffer(data.payload, sender); break; case 'answer': handleAnswer(data.payload, sender); break; case 'candidate': handleCandidate(data.payload, sender); break; }
-        }
-        async function initiateCall(remoteUser) { if (peers[remoteUser]) return; const pc = createPeerConnection(remoteUser); const offer = await pc.createOffer(); await pc.setLocalDescription(offer); broadcastWebRTCSignal('offer', { sdp: offer, target: remoteUser }); }
-        async function handleOffer(payload, sender) { let pc = peers[sender]; if (!pc) pc = createPeerConnection(sender); if (pc.signalingState === 'stable') { await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp)); const answer = await pc.createAnswer(); await pc.setLocalDescription(answer); broadcastWebRTCSignal('answer', { sdp: answer, target: sender }); } }
-        async function handleAnswer(payload, sender) { const pc = peers[sender]; if (pc && pc.signalingState === 'have-local-offer') await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp)); }
-        async function handleCandidate(payload, sender) { const pc = peers[sender]; if (pc) await pc.addIceCandidate(new RTCIceCandidate(payload.candidate)); }
-        function handleLeaveCall(remoteUser) { if (peers[remoteUser]) { peers[remoteUser].close(); delete peers[remoteUser]; delete dataChannels[remoteUser]; const el = document.getElementById(`vid-remote-${remoteUser}`); if (el) el.remove(); addSystemMessage(`Signal lost from ${remoteUser}`, "warning"); } }
-        function addLocalVideo(stream) { const div = document.createElement('div'); div.id = "vid-local"; div.className = "video-container local"; div.innerHTML = `<video autoplay muted playsinline></video><div class="remote-label" style="color:#00e5ff">ME</div>`; div.querySelector('video').srcObject = stream; UI.videoGrid.appendChild(div); UI.videoGrid.classList.remove('hidden'); }
-        function broadcastWebRTCSignal(signalType, payload) { if (mqttClient && mqttClient.isConnected()) { const topic = currentRoom === "public" ? "termos/public" : `termos/rooms/${currentRoom}`; const msgPayload = { user: userProfile.name, type: 'webrtc', signal: signalType, payload: payload }; const msg = new Paho.MQTT.Message(JSON.stringify(msgPayload)); msg.destinationName = topic; mqttClient.send(msg); } }
-
-        /* --- IDE & DEVOPS --- */
-        function toggleCodeEditor() { const isHidden = UI.codeOverlay.classList.contains('hidden-ui'); if (isHidden) { if(!UI.codeArea.value) UI.codeArea.value = document.documentElement.outerHTML; UI.codeOverlay.classList.remove('hidden-ui'); UI.codeOverlay.classList.add('active'); setTimeout(runCode, 500); } else { UI.codeOverlay.classList.add('hidden-ui'); UI.codeOverlay.classList.remove('active'); } }
-        function toggleRepoSettings() { UI.repoSettings.classList.toggle('hidden-ui'); }
-        function runCode() { const code = UI.codeArea.value; const doc = UI.previewFrame.contentDocument || UI.previewFrame.contentWindow.document; doc.open(); doc.write(code); doc.close(); }
-
-        async function triggerAutoFix() {
-            const code = UI.codeArea.value; if(!code) return;
-            UI.copilotStatus.innerText = t('copilotThinking');
-            const thinkingDiv = document.createElement('div'); thinkingDiv.className = "text-[10px] text-cyan-400 italic mb-2 animate-pulse"; thinkingDiv.innerText = "Analyzing & Patching..."; thinkingDiv.id = "copilot-thinking"; UI.copilotChatLog.appendChild(thinkingDiv);
-            UI.copilotChatLog.scrollTop = UI.copilotChatLog.scrollHeight;
-            try {
-                const messages = [{ role: "system", content: "You are an expert developer. Analyze code. Fix all bugs, improve syntax, and ensure it works perfectly. Return ONLY complete corrected HTML/JS code inside a single code block. Do not add explanations outside code block." }, { role: "user", content: `Code:\n${code.substring(0, 4000)}` }];
-                const reply = await safeFetch(messages);
-                const codeMatch = reply.match(/```(?:html)?([\s\S]*?)```/);
-                const cleanCode = codeMatch ? codeMatch[1].trim() : reply;
-                UI.codeArea.value = cleanCode; runCode();
-                const successMsg = document.createElement('div'); successMsg.className = "text-[10px] text-green-400 font-bold mb-2 border-l-2 border-green-500 pl-2"; successMsg.innerText = "✅ " + t('patchApplied'); UI.copilotChatLog.appendChild(successMsg);
-            } catch(e) { const errDiv = document.createElement('div'); errDiv.className = "text-[10px] text-red-400 mb-2"; errDiv.innerText = "Fix Error: " + e.message; UI.copilotChatLog.appendChild(errDiv); } finally { const tEl = document.getElementById('copilot-thinking'); if(tEl) tEl.remove(); UI.copilotStatus.innerText = "READY"; UI.copilotChatLog.scrollTop = UI.copilotChatLog.scrollHeight; }
-        }
-
-        async function askCopilot() {
-            const query = UI.copilotInput.value.trim(); const code = UI.codeArea.value; if(!query) return;
-            UI.copilotInput.value = ''; UI.copilotStatus.innerText = t('copilotThinking');
-            const userMsg = document.createElement('div'); userMsg.className = "text-right text-[10px] mb-1 text-cyan-300 font-mono"; userMsg.innerText = `> ${query}`; UI.copilotChatLog.appendChild(userMsg);
-            const thinkingDiv = document.createElement('div'); thinkingDiv.className = "text-[10px] text-gray-500 italic mb-2 animate-pulse"; thinkingDiv.innerText = "Thinking..."; thinkingDiv.id = "copilot-thinking"; UI.copilotChatLog.appendChild(thinkingDiv);
-            UI.copilotChatLog.scrollTop = UI.copilotChatLog.scrollHeight;
-            try {
-                const messages = [{ role: "system", content: "You are Copilot embedded in Nexus. Analyze HTML/JS/CSS. Be concise." }, { role: "user", content: `User Question: ${query}\n\nCode:\n${code.substring(0, 3000)}...` }];
-                const reply = await safeFetch(messages);
-                const aiMsg = document.createElement('div'); aiMsg.className = "text-[10px] mb-2 text-gray-300 border-l-2 border-cyan-500 pl-2 markdown-body"; aiMsg.innerHTML = marked.parse(reply); UI.copilotChatLog.appendChild(aiMsg);
-            } catch (e) { const errDiv = document.createElement('div'); errDiv.className = "text-[10px] text-red-400 mb-2"; errDiv.innerText = "Error: " + e.message; UI.copilotChatLog.appendChild(errDiv); } finally { const tEl = document.getElementById('copilot-thinking'); if(tEl) tEl.remove(); UI.copilotStatus.innerText = "READY"; UI.copilotChatLog.scrollTop = UI.copilotChatLog.scrollHeight; }
-        }
-
-        async function installRepo() {
-            const repoRef = UI.loadRepoInput.value.trim(); if(!repoRef) return;
-            const parts = repoRef.split('/'); if(parts.length < 2) { addSystemMessage("Invalid format. Use owner/repo", "error"); return; }
-            const owner = parts[0]; const repo = parts[1];
-            try {
-                const repoRes = await fetchWithTimeout(`https://api.github.com/repos/${owner}/${repo}`); if(!repoRes.ok) throw new Error("Repo not found");
-                const repoData = await repoRes.json(); const defaultBranch = repoData.default_branch || 'main';
-                const filesToTry = ['index.html', 'index.htm', 'README.md', 'main.js']; let loaded = false;
-                for(let file of filesToTry) {
-                    const res = await fetchWithTimeout(`https://api.github.com/repos/${owner}/${repo}/contents/${file}?ref=${defaultBranch}`);
-                    if(res.ok) { const data = await res.json(); if(data.content) {
-                        const content = decodeURIComponent(escape(atob(data.content))); UI.codeArea.value = content; UI.shaDisplay.innerText = `SHA: ${data.sha.substring(0,7)}`; currentFileSHA = data.sha;
-                        UI.ghOwner.value = owner; UI.ghRepo.value = repo; UI.ghPath.value = file; addSystemMessage(`Installed: ${file} from ${owner}/${repo}`, "info"); runCode(); loaded = true; break;
-                    }}
-                }
-                if(!loaded) throw new Error("Could not find a supported file");
-            } catch(e) { addSystemMessage("Install Error: " + e.message, "error"); }
-        }
-
-        async function pushToRepo() {
-            const token = UI.ghTokenInput.value.trim() || ghToken; const owner = UI.ghOwner.value.trim(); const repo = UI.ghRepo.value.trim(); const path = UI.ghPath.value.trim() || 'index.html';
-            if(!token || !owner || !repo) { alert("Please configure Repo Settings (Token, Owner, Repo) first."); toggleRepoSettings(); return; }
-            const content = UI.codeArea.value; const encodedContent = btoa(unescape(encodeURIComponent(content))); const message = `Update ${path} via Nexus`;
-            try {
-                let sha = currentFileSHA; if(!sha) {
-                    const checkRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, { headers: { 'Authorization': `token ${token}` } });
-                    if(checkRes.ok) { 
-                        const data = await checkRes.json(); sha = data.sha; 
-                    } else if(checkRes.status === 404) { sha = null; } else { throw new Error("Failed to check file status"); }
-                }
-                const payload = { message: message, content: encodedContent, sha: sha };
-                const res = await fetchWithTimeout(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
-                    method: 'PUT', 
-                    headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' }, 
-                    body: JSON.stringify(payload)
-                }, 15000);
-                if (res.ok) {
-                    const data = await res.json(); addSystemMessage(t('gistSuccess') + ` (Commit: ${data.commit.sha.substring(0,7)})`, "info"); currentFileSHA = data.content.sha; UI.shaDisplay.innerText = `SHA: ${currentFileSHA.substring(0,7)}`;
-                } else { const err = await res.json(); throw new Error(err.message); }
-            } catch (e) { addSystemMessage(t('gistError') + `: ${e.message}`, "error"); }
-        }
-
-        /* --- CANVAS PERFORMANCE --- */
-        let animationFrameId;
-        function initGalaxy() {
-            const canvas = document.getElementById('galaxy-canvas'); const ctx = canvas.getContext('2d');
-            let w = canvas.width = window.innerWidth; let h = canvas.height = window.innerHeight;
-            const stars = Array(300).fill().map(() => ({ x: Math.random() * w, y: Math.random() * h, z: Math.random() * 2 + 0.5, o: Math.random(), s: Math.random() * 2 + 0.5, vx: (Math.random() - 0.5) * 0.2, vy: (Math.random() - 0.5) * 0.2 }));
-            let mouseX = w / 2; let mouseY = h / 2;
-            window.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
-            
-            function draw() {
-                if (!isTabActive) { animationFrameId = requestAnimationFrame(draw); return; }
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.
+        App.init();
+    </script>
+</body>
+</html>
