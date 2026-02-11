@@ -2,404 +2,795 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,
- initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEXUS // CYBERPUNK</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NEXUS // CYBERPUNK 5.0</title>
     <meta name="theme-color" content="#050505">
     
     <!-- CORE -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    
-    <!-- BACKEND -->
-    <script>
-        window.Nexus = {
-            ready: false,
-            provider: localStorage.getItem('nexus_prov') || 'puter',
-            key: localStorage.getItem('nexus_key') || '',
-           
- db: JSON.parse(localStorage.getItem('nexus_db')) || { users: [], adminPassword: 'dauptr' },
-            session: JSON.parse(localStorage.getItem('nexus_session')) || null
-        };
-    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://js.puter.com/v2/" async onload="window.Nexus.ready = true"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
 
     <style>
         :root {
-            --bg: #050505;
-            --surface: #0a0a0a;
-            --neon-cyan: #0ff;
-            --neon-pink: #f0f;
-            --neon-yellow: #ff0;
-            --glass: rgba(10, 10, 10, 0.85);
-            --border: rgba(0, 255, 255, 0.15);
+            --bg: #020204; --surface: #0a0a0f; 
+            --neon-cyan: #00f3ff; --neon-pink: #ff00ff; --neon-yellow: #fcee0a; --neon-green: #0aff00;
+            --glass: rgba(10, 15, 20, 0.85); 
+            --border: rgba(0, 243, 255, 0.2);
+            --font-display: 'Orbitron', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
         }
-        body { font-family: 'JetBrains Mono', monospace; background: var(--bg); color: #ccc; height: 100vh; margin: 0; overflow: hidden; cursor: crosshair; }
         
-        /* CYBERPUNK EFFECTS */
-        .scanlines { position: fixed; inset: 0; background: repeating-linear-gradient(0deg, rgba(0,0,0,0.1) 0px, rgba(0,0,0,0.1) 1px, transparent 1px, transparent 2px); pointer-events: none; z-index: 1000; }
-        .glitch { text-shadow: 2px 0 var(--neon-pink), -2px 0 var(--neon-cyan); animation: glitch 500ms infinite; }
-        @keyframes glitch { 0% { transform: translate(0) } 20% { transform: translate(-2px, 2px) } 40% { transform: translate(-2px, -2px) } 60% { transform: translate(2px, 2px) } 80% { transform: translate(2px, -2px) } 100% { transform: translate(0) } }
-        
-        /* Layout */
-        .app-shell { display: flex; flex-direction: column; height: 100%; position: relative; }
-        .glass-panel { background: var(--glass); border: 1px solid var(--border); backdrop-filter: blur(10px); box-shadow: 0 0 15px rgba(0, 255, 255, 0.05); }
-        
-        /* Navigation */
-        .nav-bar { height: 60px; background: rgba(5,5,5,0.9); border-top: 1px solid var(--border); display: flex; justify-content: space-around; align-items: center; z-index: 50; }
-        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 12px; color: #555; cursor: pointer; transition: 0.1s; clip-path: polygon(10% 0, 100% 0, 90% 100%, 0% 100%); }
-        .nav-item.active { color: var(--neon-cyan); background: rgba(0, 255, 255, 0.05); text-shadow: 0 0 5px var(--neon-cyan); }
-        .nav-label { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; }
+        body { 
+            font-family: var(--font-mono); 
+            background: var(--bg); 
+            color: #e0e0e0; 
+            height: 100vh; margin: 0; overflow: hidden; 
+            cursor: crosshair; 
+            background-image: radial-gradient(circle at 50% 50%, #111 0%, #000 100%);
+        }
 
-        /* Components */
-        .cyber-input { background: #000; border: 1px solid #333; border-bottom: 1px solid var(--neon-cyan); color: #fff; padding: 10px; width: 100%; font-family: inherit; outline: none; font-size: 14px; }
+        /* FX */
+        .scanlines { position: fixed; inset: 0; background: repeating-linear-gradient(0deg, rgba(0,0,0,0.15) 0px, rgba(0,0,0,0.15) 1px, transparent 1px, transparent 2px); pointer-events: none; z-index: 1000; opacity: 0.6; }
+        .glow-text { text-shadow: 0 0 5px var(--neon-cyan); }
+        .glitch { position: relative; }
+        .glitch::before, .glitch::after {
+            content: attr(data-text); position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        }
+        .glitch::before { left: 2px; text-shadow: -1px 0 red; clip: rect(24px, 550px, 90px, 0); animation: glitch-anim-2 3s infinite linear alternate-reverse; }
+        .glitch::after { left: -2px; text-shadow: -1px 0 blue; clip: rect(85px, 550px, 140px, 0); animation: glitch-anim 2.5s infinite linear alternate-reverse; }
+        @keyframes glitch-anim { 0% { clip: rect(11px, 9999px, 81px, 0); } 100% { clip: rect(69px, 9999px, 14px, 0); } }
+        @keyframes glitch-anim-2 { 0% { clip: rect(65px, 9999px, 96px, 0); } 100% { clip: rect(4px, 9999px, 43px, 0); } }
+
+        /* LAYOUT */
+        .app-shell { display: flex; flex-direction: column; height: 100%; position: relative; z-index: 10; }
+        .glass-panel { 
+            background: var(--glass); 
+            border: 1px solid var(--border); 
+            backdrop-filter: blur(12px); 
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5); 
+        }
+        
+        /* HUD */
+        .hud-header {
+            height: 45px;
+            background: rgba(0,0,0,0.95);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 15px;
+            font-size: 10px;
+            letter-spacing: 1px;
+            color: var(--neon-cyan);
+        }
+        .stat-box { display: flex; align-items: center; gap: 6px; width: 80px; }
+        .stat-bar { flex: 1; height: 4px; background: #222; position: relative; overflow: hidden; }
+        .stat-fill { height: 100%; background: var(--neon-green); width: 0%; transition: width 0.5s ease; box-shadow: 0 0 5px var(--neon-green); }
+
+        /* NAV */
+        .nav-bar { 
+            height: 65px; 
+            background: rgba(5,5,5,0.95); 
+            border-top: 1px solid var(--border); 
+            display: flex; 
+            justify-content: space-around; 
+            align-items: center; 
+            z-index: 50; 
+            backdrop-filter: blur(10px);
+        }
+        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 16px; color: #666; cursor: pointer; transition: 0.2s; clip-path: polygon(15% 0, 100% 0, 85% 100%, 0% 100%); }
+        .nav-item.active { color: var(--neon-cyan); background: rgba(0, 243, 255, 0.1); text-shadow: 0 0 8px var(--neon-cyan); border-bottom: 2px solid var(--neon-cyan); }
+        .nav-label { font-size: 9px; font-weight: 700; letter-spacing: 1.5px; }
+
+        /* UI COMPONENTS */
+        .cyber-input { 
+            background: rgba(0,0,0,0.6); 
+            border: 1px solid #333; 
+            border-bottom: 1px solid var(--neon-cyan); 
+            color: #fff; padding: 12px; width: 100%; font-family: inherit; outline: none; font-size: 13px; 
+            transition: 0.3s;
+        }
+        .cyber-input:focus { background: rgba(0, 243, 255, 0.05); box-shadow: 0 0 10px rgba(0, 243, 255, 0.1); }
         .cyber-btn { 
-            background: transparent; color: var(--neon-cyan); border: 1px solid var(--neon-cyan); padding: 10px 20px; 
-            font-family: 'Orbitron', sans-serif; font-weight: bold; cursor: pointer; text-transform: uppercase; 
-            clip-path: polygon(10% 0, 100% 0, 90% 100%, 0% 100%); transition: 0.2s; position: relative; overflow: hidden;
+            background: rgba(0,0,0,0.5); color: var(--neon-cyan); border: 1px solid var(--neon-cyan); 
+            padding: 10px 20px; font-family: var(--font-display); font-weight: bold; cursor: pointer; 
+            text-transform: uppercase; letter-spacing: 1px; font-size: 12px;
+            clip-path: polygon(10% 0, 100% 0, 90% 100%, 0% 100%); transition: 0.2s; 
         }
-        .cyber-btn:hover { background: var(--neon-cyan); color: #000; box-shadow: 0 0 15px var(--neon-cyan); }
+        .cyber-btn:hover { background: var(--neon-cyan); color: #000; box-shadow: 0 0 20px var(--neon-cyan); }
+        .cyber-btn:active { transform: scale(0.95); }
         .cyber-btn.danger { color: var(--neon-pink); border-color: var(--neon-pink); }
-        .cyber-btn.danger:hover { background: var(--neon-pink); color: #000; box-shadow: 0 0 15px var(--neon-pink); }
+        .cyber-btn.danger:hover { background: var(--neon-pink); color: #000; box-shadow: 0 0 20px var(--neon-pink); }
 
-        /* ID Card */
-        .id-card { background: #111; border: 1px solid #333; padding: 20px; text-align: center; position: relative; }
-        .id-card::before { content: 'NEXUS_ID'; position: absolute; top: 0; left: 0; background: var(--neon-cyan); color: #000; font-size: 10px; padding: 2px 5px; }
+        /* IDENTITY */
+        .id-card { background: rgba(20,20,25,0.9); border: 1px solid var(--border); padding: 30px 20px; text-align: center; position: relative; overflow: hidden; }
+        .avatar { width: 90px; height: 90px; background: #111; border: 2px solid var(--neon-cyan); margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; font-size: 45px; position: relative; box-shadow: 0 0 20px rgba(0, 243, 255, 0.2); }
+        .avatar::before { content: ''; position: absolute; inset: -5px; border: 1px dashed var(--neon-pink); animation: spin 10s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* VIEWS */
+        .view { position: absolute; inset: 0; overflow-y: auto; display: none; flex-direction: column; background: rgba(5,5,5,0.8); padding-bottom: 70px; }
+        .view.active { display: flex; animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+
+        /* CHAT */
+        .chat-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        .chat-log { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 12px; scroll-behavior: smooth; }
+        .chat-msg { max-width: 85%; padding: 10px 14px; border-radius: 2px; font-size: 13px; line-height: 1.4; position: relative; animation: slideUp 0.2s ease-out; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .chat-msg.system { align-self: center; background: transparent; color: #666; font-size: 10px; text-transform: uppercase; border: none; text-align: center; width: 100%; }
+        .chat-msg.me { align-self: flex-end; background: rgba(0, 243, 255, 0.1); border: 1px solid var(--neon-cyan); color: #fff; border-bottom-right-radius: 0; }
+        .chat-msg.other { align-self: flex-start; background: rgba(255, 255, 255, 0.05); border: 1px solid #333; color: #ccc; border-bottom-left-radius: 0; }
+        .msg-meta { font-size: 9px; color: #666; margin-bottom: 4px; display: flex; justify-content: space-between; gap: 10px; }
+        .msg-name { font-weight: bold; color: var(--neon-cyan); }
+
+        /* VIDEO */
+        .video-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; padding: 10px; height: 100%; overflow-y: auto; }
+        .video-box { background: #000; border: 1px solid #333; position: relative; aspect-ratio: 16/9; overflow: hidden; }
+        .video-box video { width: 100%; height: 100%; object-fit: cover; }
+        .video-label { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.7); color: var(--neon-cyan); font-size: 10px; padding: 2px 5px; display: flex; justify-content: space-between; }
         
-        /* Avatar */
-        .avatar { width: 80px; height: 80px; border-radius: 0; background: #222; border: 2px solid var(--neon-cyan); margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 40px; position: relative; }
-        .avatar::after { content: ''; position: absolute; inset: -5px; border: 1px solid var(--neon-pink); opacity: 0.5; }
+        /* Simulated Peer Animation */
+        .static-noise {
+            width: 100%; height: 100%; background: repeating-linear-gradient(0deg, transparent, transparent 2px, #222 3px);
+            opacity: 0.5;
+            animation: noise 0.5s infinite;
+        }
+        @keyframes noise { 0% { background-position: 0 0; } 100% { background-position: 0 100%; } }
 
-        /* Views */
-        .view { position: absolute; inset: 0; overflow-y: auto; display: none; flex-direction: column; background: rgba(5,5,5,0.9); }
-        .view.active { display: flex; animation: fadeIn 0.2s linear; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        /* ADMIN PANEL */
+        .user-row { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.03); padding: 8px; margin-bottom: 4px; border-left: 2px solid #333; }
+        .user-row.premium { border-left-color: var(--neon-green); }
+        .user-row.locked { border-left-color: var(--neon-pink); }
 
-        /* Chat */
-        .chat-msg { margin: 10px; padding: 10px; border-left: 2px solid #333; background: rgba(255,255,255,0.02); font-size: 13px; }
-        .chat-msg.me { border-color: var(--neon-cyan); background: rgba(0, 255, 255, 0.03); }
-
-        /* Map Grid */
-        .grid-map { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 15px; padding: 15px; justify-items: center; }
-        .map-avatar { width: 60px; height: 60px; background: #111; border: 1px solid #333; display: flex; align-items: center; justify-content: center; animation: float 4s ease-in-out infinite; }
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
-
-        /* Lock Overlay */
-        .lock-screen { position: absolute; inset: 0; background: rgba(0,0,0,0.95); z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; border-top: 1px solid var(--neon-yellow); }
+        /* LOCK & TOAST */
+        .lock-screen { position: absolute; inset: 0; background: rgba(0,0,0,0.9); z-index: 20; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; backdrop-filter: blur(5px); border-top: 2px solid var(--neon-yellow); }
+        .radio-bar { position: fixed; bottom: 75px; left: 0; right: 0; height: 50px; background: rgba(0,0,0,0.95); border-top: 1px solid var(--neon-pink); display: none; align-items: center; padding: 0 15px; z-index: 60; box-shadow: 0 -5px 20px rgba(0,0,0,0.5); }
+        .radio-bar.active { display: flex; }
+        #toast-container { position: fixed; top: 60px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; width: 90%; max-width: 300px; }
+        .toast { background: rgba(0, 5, 10, 0.95); border: 1px solid var(--neon-cyan); color: var(--neon-cyan); padding: 10px 15px; font-family: var(--font-display); font-size: 11px; text-transform: uppercase; text-align: center; box-shadow: 0 0 15px rgba(0, 243, 255, 0.3); animation: slideIn 0.3s ease-out; pointer-events: auto; }
+        .toast.error { border-color: var(--neon-pink); color: var(--neon-pink); box-shadow: 0 0 15px rgba(255, 0, 255, 0.3); }
+        @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     </style>
 </head>
 <body>
 
-<!-- Scanlines Overlay -->
 <div class="scanlines"></div>
+<div id="toast-container"></div>
 
-<!-- 1. IDENTITY GENERATOR -->
+<!-- 1. IDENTITY -->
 <div id="id-screen" class="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black">
-    <div class="glass-panel w-full max-w-xs">
+    <div class="glass-panel w-full max-w-sm relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-50"></div>
         <div class="id-card">
-            <div class="avatar" id="gen-avatar">👁️</div>
-            <h1 id="gen-name" class="text-xl font-bold text-white tracking-wider glitch">GHOST_001</h1>
-            <p class="text-[10px] text-gray-500 mt-1 tracking-widest uppercase">Cyber Identity</p>
+            <div class="avatar" id="gen-avatar">👤</div>
+            <h1 id="gen-name" class="text-2xl font-black text-white tracking-widest glitch mb-2" data-text="GHOST_001">GHOST_001</h1>
+            <p class="text-[10px] text-cyan-500 tracking-[0.2em] font-bold opacity-80">CYBER_IDENTITY</p>
         </div>
-        
-        <div class="p-4 space-y-3">
-            <button onclick="ID.gen()" class="cyber-btn w-full">Randomize</button>
-            <button onclick="ID.save()" class="cyber-btn w-full" style="background:var(--neon-cyan); color:#000;">Jack In</button>
+        <div class="p-6 space-y-4">
+            <button onclick="App.auth.gen(); SFX.play('click')" class="cyber-btn w-full text-xs opacity-80 hover:opacity-100">Reroll Identity</button>
+            <button onclick="App.auth.login()" class="cyber-btn w-full" style="background:var(--neon-cyan); color:#000; box-shadow: 0 0 15px var(--neon-cyan);">JACK IN</button>
         </div>
-        
         <div class="p-4 border-t border-gray-800 hidden" id="admin-login">
-            <input type="password" id="admin-pass" class="cyber-input text-xs mb-2" placeholder="Admin Key">
-            <button onclick="App.auth.admin()" class="cyber-btn danger w-full text-xs">Auth</button>
+            <input type="password" id="admin-pass" class="cyber-input text-xs mb-2 text-center" placeholder="ADMIN_PASS">
+            <button onclick="App.auth.admin()" class="cyber-btn danger w-full text-xs">AUTHENTICATE</button>
         </div>
         <div class="text-center p-2">
-            <span onclick="document.getElementById('admin-login').classList.toggle('hidden')" class="text-[10px] text-gray-700 cursor-pointer hover:text-gray-500">[ SysAdmin? ]</span>
+            <span onclick="document.getElementById('admin-login').classList.toggle('hidden'); SFX.play('click')" class="text-[9px] text-gray-700 cursor-pointer hover:text-cyan-500 transition tracking-widest">[ SYSTEM ADMIN ]</span>
         </div>
     </div>
 </div>
 
-<!-- 2. MAIN APP -->
+<!-- 2. MAIN SHELL -->
 <div id="app-main" class="app-shell hidden">
-    
-    <div class="view-layer flex-1">
-        
-        <!-- GLOBAL (Social Map) -->
-        <section id="view-global" class="view active">
-            <header class="p-3 border-b border-gray-800 flex justify-between items-center">
-                <div><span class="text-[10px] text-cyan-400">LOC:</span> <span class="text-white">PUBLIC SQUARE</span></div>
-                <div class="text-[10px] text-gray-500">USR: <span class="text-green-400" id="hdr-name">ONLINE</span></div>
-            </header>
-            
-            <div class="grid-map" id="map-grid">
-                <!-- Avatars go here -->
-            </div>
+    <!-- HUD -->
+    <header class="hud-header">
+        <div class="stat-box"><span class="text-gray-500">CPU:</span> <div class="stat-bar"><div id="cpu-fill" class="stat-fill"></div></div></div>
+        <div class="glow-text font-bold tracking-widest flex flex-col items-center">
+            <span>NEXUS // V5.0</span>
+            <span id="hud-clock" class="text-[8px] text-gray-500 font-normal">00:00:00</span>
+        </div>
+        <div class="stat-box justify-end"><span id="net-status" class="text-green-500">ONLINE</span></div>
+    </header>
 
-            <!-- Overlay Chat -->
-            <div class="absolute bottom-0 left-0 right-0 glass-panel" style="height: 45%; border-bottom:none; border-left:none; border-right:none;">
-                <div id="chat-log" class="p-2 h-[calc(100%-50px)] overflow-y-auto"></div>
-                <div class="absolute bottom-0 left-0 right-0 p-2 flex gap-2 bg-black/50">
-                    <input type="text" id="chat-in" class="cyber-input text-xs py-1" placeholder="Transmit...">
-                    <button onclick="App.chat.send()" class="cyber-btn text-xs">Send</button>
+    <div class="view-layer flex-1 relative">
+        
+        <!-- GLOBAL CHAT -->
+        <section id="view-global" class="view active">
+            <div class="chat-container">
+                <div class="absolute top-0 left-0 w-full bg-black/80 border-b border-gray-800 p-2 z-10 flex justify-between items-center backdrop-blur-sm">
+                    <span class="text-xs font-bold text-cyan-400">📡 PUBLIC_FREQ</span>
+                    <span id="online-count" class="text-[10px] text-green-500">ONLINE: 4</span>
+                </div>
+                <div id="chat-log" class="chat-log" style="margin-top: 40px;">
+                    <!-- History Loads Here -->
+                </div>
+                <div class="p-3 bg-black/90 border-t border-gray-800">
+                    <div class="flex gap-2">
+                        <input type="text" id="chat-in" class="cyber-input text-xs" placeholder="Transmit message..." autocomplete="off">
+                        <button onclick="App.chat.send()" class="cyber-btn text-xs px-4">SEND</button>
+                    </div>
                 </div>
             </div>
         </section>
 
         <!-- VIDEO -->
-        <section id="view-video" class="view" style="padding:0;">
-            <div class="video-grid" id="video-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:1px; height:100%; background:#000;"></div>
-            <div style="position:absolute; bottom:20px; left:0; right:0; flex; gap:5px; display:flex; justify-content:center;">
-                <button onclick="App.video.start()" class="cyber-btn text-xs">Cam On</button>
-                <button onclick="App.video.stop()" class="cyber-btn danger text-xs">Kill Sig</button>
+        <section id="view-video" class="view p-2">
+            <div class="flex justify-between items-center mb-2 px-2">
+                <h2 class="text-xs font-bold text-pink-500">VIDEO UPLINK</h2>
+                <div class="flex gap-2">
+                    <button onclick="App.video.start()" class="cyber-btn text-xs py-1">CAM_ON</button>
+                    <button onclick="App.video.stop()" class="cyber-btn danger text-xs py-1">KILL</button>
+                </div>
             </div>
-            <div id="lock-video" class="lock-screen"><h3 class="text-lg font-bold mb-4 text-yellow-400">🔒 RESTRICTED</h3><button onclick="App.pay()" class="cyber-btn danger">Unlock</button></div>
+            <div class="video-grid" id="video-grid">
+                <div class="video-box flex items-center justify-center text-gray-700 border-dashed border-2">
+                    <div class="text-center">NO SIGNAL<br><span class="text-[9px]">Waiting for peers...</span></div>
+                </div>
+            </div>
+            <div id="lock-video" class="lock-screen">
+                <h3 class="text-xl font-black mb-2 text-yellow-400">🔒 UPLINK RESTRICTED</h3>
+                <p class="text-xs text-gray-400 mb-4">Access to visual cortex requires elevated privileges.</p>
+                <button onclick="App.pay()" class="cyber-btn danger">UNLOCK</button>
+            </div>
         </section>
 
-        <!-- TOOLS MENU -->
+        <!-- TOOLS -->
         <section id="view-tools" class="view p-4">
-            <h2 class="text-lg font-bold mb-4 text-cyan-400 border-b border-gray-800 pb-2">SYSTEM TOOLS</h2>
-            <div class="grid grid-cols-2 gap-2">
-                <div onclick="App.nav('ide')" class="glass-panel p-4 cursor-pointer hover:border-cyan-500 transition">
-                    <div class="text-xl">💻</div>
-                    <div class="mt-2 font-bold text-sm">IDE</div>
+            <h2 class="text-lg font-bold mb-6 text-white border-b border-gray-800 pb-2 flex justify-between">
+                <span class="glow-text">MODULES</span>
+                <span class="text-[10px] self-center bg-gray-800 px-2 py-1 rounded text-gray-400">SYS.ROOT</span>
+            </h2>
+            <div class="grid grid-cols-2 gap-4">
+                <div onclick="App.nav('ide')" class="glass-panel p-5 cursor-pointer hover:border-cyan-400 hover:bg-cyan-900/10 transition group text-center">
+                    <div class="text-4xl mb-3 group-hover:scale-110 transition-transform">💻</div>
+                    <div class="font-bold text-sm text-cyan-300">DEV_IDE</div>
                 </div>
-                <div onclick="App.nav('art')" class="glass-panel p-4 cursor-pointer hover:border-pink-500 transition">
-                    <div class="text-xl">🎨</div>
-                    <div class="mt-2 font-bold text-sm">NetArt</div>
+                <div onclick="App.nav('art')" class="glass-panel p-5 cursor-pointer hover:border-pink-500 hover:bg-pink-900/10 transition group text-center">
+                    <div class="text-4xl mb-3 group-hover:scale-110 transition-transform">🎨</div>
+                    <div class="font-bold text-sm text-pink-300">NET_ART</div>
                 </div>
-                <div onclick="App.nav('game')" class="glass-panel p-4 cursor-pointer hover:border-green-500 transition">
-                    <div class="text-xl">🕹️</div>
-                    <div class="mt-2 font-bold text-sm">Games</div>
+                <div onclick="App.nav('game')" class="glass-panel p-5 cursor-pointer hover:border-green-500 hover:bg-green-900/10 transition group text-center">
+                    <div class="text-4xl mb-3 group-hover:scale-110 transition-transform">🕹️</div>
+                    <div class="font-bold text-sm text-green-300">ARCADE</div>
                 </div>
-                <div onclick="App.nav('radio')" class="glass-panel p-4 cursor-pointer hover:border-yellow-500 transition">
-                    <div class="text-xl">📻</div>
-                    <div class="mt-2 font-bold text-sm">Waves</div>
+                <div onclick="App.nav('radio')" class="glass-panel p-5 cursor-pointer hover:border-yellow-500 hover:bg-yellow-900/10 transition group text-center">
+                    <div class="text-4xl mb-3 group-hover:scale-110 transition-transform">📻</div>
+                    <div class="font-bold text-sm text-yellow-300">WAVES</div>
                 </div>
             </div>
         </section>
 
-        <!-- SETTINGS -->
+        <!-- SETTINGS & ADMIN -->
         <section id="view-set" class="view p-4">
              <h2 class="text-lg font-bold mb-4 text-cyan-400 border-b border-gray-800 pb-2">CONFIG</h2>
              
-             <div class="glass-panel p-3 mb-3 text-center">
-                <button onclick="App.share()" class="cyber-btn w-full text-xs">📤 Share Network Link</button>
+             <div class="glass-panel p-4 mb-4 text-center">
+                <div class="text-xs text-gray-400 mb-2">CURRENT IDENTITY</div>
+                <div class="text-lg font-bold text-white mb-2" id="set-username">UNKNOWN</div>
+                <button onclick="App.share()" class="cyber-btn w-full text-xs mt-2">SHARE NET LINK</button>
              </div>
 
-             <div class="glass-panel p-3 mb-3 border-red-500/50 bg-red-900/10">
-                 <h3 class="font-bold text-red-400 text-sm mb-2">UNLOCK FULL NET</h3>
-                 <button onclick="App.pay()" class="cyber-btn danger w-full">Donate // Unlock</button>
-             </div>
-
-             <div class="glass-panel p-3">
-                 <label class="text-[10px] text-gray-500">AI PROVIDER</label>
-                 <select id="sel-prov" class="cyber-input text-xs mt-1" onchange="App.settings.ui()">
-                     <option value="puter">Puter (Zero Cost)</option>
-                     <option value="groq">Groq (API)</option>
-                 </select>
-                 <div id="wrap-key" class="mt-2 opacity-30"><input id="txt-key" class="cyber-input text-xs" placeholder="API KEY"></div>
-             </div>
-
-             <!-- Admin -->
-             <div id="admin-panel" class="hidden mt-4">
-                 <div class="glass-panel p-3 border-cyan-500/30">
-                     <h3 class="text-cyan-400 font-bold text-xs mb-2">ADMIN CONTROL</h3>
-                     <div id="user-list" class="space-y-1 max-h-40 overflow-y-auto"></div>
+             <!-- ADMIN PANEL (HIDDEN unless ADMIN) -->
+             <div id="admin-ui" class="hidden mb-4">
+                 <div class="glass-panel p-4 border-cyan-500/30 mb-4">
+                     <h3 class="text-cyan-400 font-bold text-xs mb-3">ADMIN CONTROL</h3>
+                     <div class="flex gap-2 mb-3">
+                         <button onclick="App.admin.clearChat()" class="cyber-btn text-xs danger flex-1">PURGE CHAT</button>
+                         <button onclick="App.admin.resetSystem()" class="cyber-btn text-xs danger flex-1">FACTORY RESET</button>
+                     </div>
+                     <div class="text-[10px] text-gray-500 mb-2 uppercase">User Database</div>
+                     <div id="user-list" class="max-h-40 overflow-y-auto pr-1"></div>
                  </div>
              </div>
+
+             <div class="glass-panel p-4 mb-4 border-red-500/30 bg-red-900/5">
+                 <h3 class="font-bold text-red-400 text-sm mb-2">PREMIUM UPLINK</h3>
+                 <p class="text-[10px] text-gray-500 mb-3">Unlock Video, IDE, Art & Game modules.</p>
+                 <button onclick="App.pay()" class="cyber-btn danger w-full text-xs">DONATE // UNLOCK</button>
+             </div>
+             
+             <div class="glass-panel p-4">
+                 <label class="text-[10px] text-gray-500">AI PROVIDER</label>
+                 <select id="sel-prov" class="cyber-input text-xs mt-2" onchange="App.settings.ui()">
+                     <option value="puter">Puter (Free)</option>
+                     <option value="groq">Groq (API Key)</option>
+                 </select>
+                 <div id="wrap-key" class="mt-2 opacity-30"><input id="txt-key" class="cyber-input text-xs" placeholder="ENTER API KEY"></div>
+             </div>
         </section>
 
-        <!-- SUB-TOOLS (Hidden by default) -->
-        
-        <!-- IDE -->
+        <!-- SUB-VIEWS -->
         <section id="view-ide" class="view" style="padding:0;">
-             <div style="height:40%; border-bottom:1px solid #222;"><textarea id="ide-code" style="width:100%; height:100%; background:#000; color:#ccc; resize:none; padding:10px; outline:none; border:none;">// Code here</textarea></div>
-             <div style="flex:1; position:relative;"><iframe id="ide-preview" style="width:100%; height:100%; border:none; background:white;"></iframe></div>
-             <div style="position:absolute; top:10px; right:10px; display:flex; gap:5px;">
-                <button onclick="App.ide.run()" class="cyber-btn text-xs py-1">Run</button>
-                <button onclick="App.ide.ask()" class="cyber-btn text-xs py-1" style="background:#111">Fix AI</button>
-            </div>
-             <div id="lock-ide" class="lock-screen"><h3 class="text-lg font-bold mb-4 text-yellow-400">🔒 RESTRICTED</h3><button onclick="App.pay()" class="cyber-btn danger">Unlock</button></div>
+             <div class="absolute top-0 left-0 right-0 p-2 bg-black/90 border-b border-gray-800 z-10 flex justify-between items-center">
+                 <span class="text-xs text-cyan-400">SOURCE_CODE</span>
+                 <div class="flex gap-2">
+                    <button onclick="App.ide.run()" class="cyber-btn text-xs py-1">RUN</button>
+                    <button onclick="App.ide.ask()" class="cyber-btn text-xs py-1 text-pink-400 border-pink-500">AI_FIX</button>
+                    <button onclick="App.nav('tools')" class="text-gray-500 hover:text-white">✕</button>
+                 </div>
+             </div>
+             <div style="height:40%; border-bottom:1px solid #222; background:#050505;">
+                <textarea id="ide-code" style="width:100%; height:100%; background:#000; color:#0f0; resize:none; padding:50px 10px 10px 10px; outline:none; border:none; font-family:'JetBrains Mono'; font-size:12px;">// NEXUS IDE
+document.body.innerHTML = '<h1 style="color:cyan;text-align:center;margin-top:20%;">SYSTEM READY</h1>';</textarea>
+             </div>
+             <div style="flex:1; position:relative; background:white;"><iframe id="ide-preview" style="width:100%; height:100%; border:none;"></iframe></div>
+             <div id="lock-ide" class="lock-screen"><h3 class="text-lg font-bold mb-4 text-yellow-400">🔒 DEV TOOLS LOCKED</h3><button onclick="App.pay()" class="cyber-btn danger">UNLOCK</button></div>
         </section>
 
-        <!-- ART -->
         <section id="view-art" class="view p-4">
-            <input type="text" id="img-prompt" class="cyber-input mb-3" placeholder="Describe visual...">
-            <button onclick="App.img.gen()" class="cyber-btn w-full mb-4" style="background:var(--neon-pink); color:white; border-color:var(--neon-pink)">Render</button>
-            <div id="img-out" class="rounded-sm overflow-hidden border border-gray-800"></div>
-            <div id="lock-art" class="lock-screen"><h3 class="text-lg font-bold mb-4 text-yellow-400">🔒 RESTRICTED</h3><button onclick="App.pay()" class="cyber-btn danger">Unlock</button></div>
-        </section>
-
-        <!-- GAMES -->
-        <section id="view-game" class="view" style="padding:0;">
-            <iframe id="game-frame" style="width:100%; height:100%; border:none; background:#000;"></iframe>
-            <div style="position:absolute; top:10px; left:10px; right:10px; display:flex; gap:5px;">
-                <input type="text" id="game-prompt" class="cyber-input text-xs py-1" placeholder="Prompt: Snake game but cyberpunk">
-                <button onclick="App.game.gen()" class="cyber-btn text-xs">Build</button>
+            <div class="mb-4">
+                <input type="text" id="img-prompt" class="cyber-input mb-3" placeholder="Describe visual...">
+                <button onclick="App.img.gen()" class="cyber-btn w-full" style="background:var(--neon-pink); color:white; border-color:var(--neon-pink)">INITIATE RENDER</button>
             </div>
-             <div id="lock-game" class="lock-screen"><h3 class="text-lg font-bold mb-4 text-yellow-400">🔒 RESTRICTED</h3><button onclick="App.pay()" class="cyber-btn danger">Unlock</button></div>
+            <div id="img-out" class="rounded-sm overflow-hidden border border-gray-800 min-h-[200px] flex items-center justify-center bg-black/50">
+                <span class="text-gray-600 text-xs animate-pulse">WAITING FOR DATA STREAM...</span>
+            </div>
+            <div id="lock-art" class="lock-screen"><h3 class="text-lg font-bold mb-4 text-yellow-400">🔒 ART MODULE LOCKED</h3><button onclick="App.pay()" class="cyber-btn danger">UNLOCK</button></div>
         </section>
 
-        <!-- RADIO -->
+        <section id="view-game" class="view" style="padding:0;">
+            <div class="absolute top-0 left-0 right-0 p-3 bg-black/90 z-10 flex gap-2">
+                <input type="text" id="game-prompt" class="cyber-input text-xs py-2 flex-1" placeholder="Game Prompt...">
+                <button onclick="App.game.gen()" class="cyber-btn text-xs">BUILD</button>
+                <button onclick="App.nav('tools')" class="text-red-500 font-bold px-2">X</button>
+            </div>
+            <iframe id="game-frame" style="width:100%; height:100%; border:none; background:#000;"></iframe>
+             <div id="lock-game" class="lock-screen"><h3 class="text-lg font-bold mb-4 text-yellow-400">🔒 GAME SYS LOCKED</h3><button onclick="App.pay()" class="cyber-btn danger">UNLOCK</button></div>
+        </section>
+
         <section id="view-radio" class="view p-4">
-            <input type="text" id="radio-search" class="cyber-input mb-3" placeholder="Search...">
-            <div id="radio-list" class="space-y-1"></div>
+            <h2 class="text-lg font-bold mb-4 text-yellow-400 border-b border-gray-800 pb-2">FREQUENCY TUNER</h2>
+            <div class="relative mb-4">
+                <input type="text" id="radio-search" class="cyber-input pl-4" placeholder="Search Frequency...">
+                <div class="absolute right-3 top-3 text-xs text-gray-500">🔍</div>
+            </div>
+            <div id="radio-list" class="space-y-2 pb-20"></div>
         </section>
-
     </div>
 
-    <!-- Bottom Nav -->
     <nav class="nav-bar">
-        <div class="nav-item active" onclick="App.nav('global')"><span class="text-lg">🗺️</span><span class="nav-label">World</span></div>
+        <div class="nav-item active" onclick="App.nav('global')"><span class="text-lg">💬</span><span class="nav-label">Chat</span></div>
         <div class="nav-item" onclick="App.nav('video')"><span class="text-lg">📹</span><span class="nav-label">Video</span></div>
         <div class="nav-item" onclick="App.nav('tools')"><span class="text-lg">🛠️</span><span class="nav-label">Tools</span></div>
         <div class="nav-item" onclick="App.nav('set')"><span class="text-lg">⚙️</span><span class="nav-label">Sys</span></div>
     </nav>
+    
+    <div id="radio-bar" class="radio-bar">
+        <button onclick="App.radio.toggle()" id="radio-toggle-btn" class="cyber-btn text-xs py-1 w-12 flex justify-center border-pink-500 text-pink-500">❚❚</button>
+        <div class="flex-1 px-3 flex flex-col justify-center overflow-hidden">
+            <div id="radio-title" class="text-[10px] text-pink-400 truncate font-bold whitespace-nowrap">OFFLINE</div>
+            <input type="range" min="0" max="100" value="70" onchange="App.radio.vol(this.value)" class="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+        </div>
+        <button onclick="App.radio.stop()" class="text-red-500 text-xs font-bold px-3 hover:text-red-400">X</button>
+    </div>
 </div>
+<audio id="radio-mp3" crossorigin="anonymous"></audio>
 
 <script>
-const $ = id => document.getElementById(id);
-// Hidden PayPal Link for security (obfuscated)
-const PAY_LINK = atob("aHR0cHM6Ly93d3cucGF5cGFsLmNvbS9wYXlwYWxtZS9kYXVwdHJAZ21haWwuY29t");
+/** 
+ * NEXUS CORE V5.0
+ * Features: Chat History, SFX, Admin Panel, Simulated Peers, Real-time HUD.
+ */
 
-window.Nexus = window.Nexus || {};
-const DB = {
-    get: () => JSON.parse(localStorage.getItem('nexus_db')) || { users: [], adminPassword: 'dauptr' },
-    save: (d) => localStorage.setItem('nexus_db', JSON.stringify(d)),
-    sess: (u) => localStorage.setItem('nexus_session', JSON.stringify(u))
-};
-
-/* --- IDENTITY SYSTEM --- */
-const ID = {
-    current: { name: '', avatar: '👁️' },
-    data: {
-        n1: ["Cyber", "Neon", "Ghost", "Zero", "Dark", "Net", "Sky", "Razor", "Synth", "Pixel"],
-        n2: ["Runner", "Wolf", "Viper", "Ghost", "Hunter", "Blade", "Stalker", "Rider", "Punk", "X"],
-        avs: ["👁️", "👾", "🤖", "💀", "👹", "🤖", "🦾", "🧠", "👁️‍🗨️", "🦿"]
-    },
-
-    init: () => {
-        const s = Nexus.session;
-        if(s) { ID.current = s; App.boot(); }
-        else { ID.gen(); }
-    },
-
-    gen: () => {
-        const D = ID.data;
-        const name = D.n1[Math.floor(Math.random()*D.n1.length)] + D.n2[Math.floor(Math.random()*D.n2.length)] + "_" + Math.floor(Math.random()*99);
-        const av = D.avs[Math.floor(Math.random()*D.avs.length)];
-        ID.current = { name: name, avatar: av };
-        $('gen-name').innerText = name;
-        $('gen-avatar').innerText = av;
-    },
-
-    save: () => {
-        if(!Nexus.db.users.find(u => u.name === ID.current.name)) Nexus.db.users.push({ name: ID.current.name, paid: false }); DB.save(Nexus.db);
-        const user = Nexus.db.users.find(u => u.name === ID.current.name);
-        Nexus.session = { ...ID.current, role: 'user', paid: user.paid };
-        DB.sess(Nexus.session);
-        App.boot();
+// --- SFX ENGINE (Web Audio API) ---
+const SFX = {
+    ctx: null,
+    init: () => { if(!SFX.ctx) SFX.ctx = new (window.AudioContext || window.webkitAudioContext)(); },
+    play: (type) => {
+        if(!SFX.ctx) SFX.init();
+        const osc = SFX.ctx.createOscillator();
+        const gain = SFX.ctx.createGain();
+        osc.connect(gain);
+        gain.connect(SFX.ctx.destination);
+        
+        const now = SFX.ctx.currentTime;
+        if(type === 'click') {
+            osc.type = 'sine'; osc.frequency.setValueAtTime(800, now); osc.frequency.exponentialRampToValueAtTime(300, now + 0.1);
+            gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+            osc.start(now); osc.stop(now + 0.1);
+        } else if (type === 'msg') {
+            osc.type = 'triangle'; osc.frequency.setValueAtTime(400, now); osc.frequency.linearRampToValueAtTime(600, now + 0.1);
+            gain.gain.setValueAtTime(0.1, now); gain.gain.linearRampToValueAtTime(0, now + 0.2);
+            osc.start(now); osc.stop(now + 0.2);
+        } else if (type === 'error') {
+            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, now); osc.frequency.linearRampToValueAtTime(100, now + 0.3);
+            gain.gain.setValueAtTime(0.1, now); gain.gain.linearRampToValueAtTime(0, now + 0.3);
+            osc.start(now); osc.stop(now + 0.3);
+        }
     }
 };
 
-/* --- APP LOGIC --- */
+// --- UTILS ---
+const $ = id => document.getElementById(id);
+const showToast = (msg, type = 'info') => {
+    const container = $('toast-container');
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.innerText = msg;
+    container.appendChild(el);
+    SFX.play(type === 'error' ? 'error' : 'msg');
+    setTimeout(() => { el.style.opacity='0'; el.style.transform='translateY(-20px)'; setTimeout(()=>el.remove(),300); }, 3000);
+};
+
+// --- STATE ---
+const PAY_LINK = "https://www.paypal.com/paypalme/dauptr";
+const DEFAULT_DB = { users: [], adminPassword: 'dauptr' };
+
+window.Nexus = {
+    ready: false,
+    provider: localStorage.getItem('nexus_prov') || 'puter',
+    key: localStorage.getItem('nexus_key') || '',
+    db: DEFAULT_DB,
+    session: null
+};
+
+const DB = {
+    save: () => { try { localStorage.setItem('nexus_db', JSON.stringify(Nexus.db)); } catch(e){} },
+    sess: (u) => { try { localStorage.setItem('nexus_session', JSON.stringify(u)); } catch(e){} },
+    saveChat: (msg) => {
+        let h = JSON.parse(localStorage.getItem('nexus_chat_history') || '[]');
+        h.push(msg);
+        if(h.length > 50) h = h.slice(-50); // Keep last 50
+        localStorage.setItem('nexus_chat_history', JSON.stringify(h));
+    }
+};
+
+try {
+    const storedDB = localStorage.getItem('nexus_db');
+    if (storedDB) window.Nexus.db = { ...DEFAULT_DB, ...JSON.parse(storedDB) };
+} catch (e) {}
+try {
+    const storedSess = localStorage.getItem('nexus_session');
+    if (storedSess) window.Nexus.session = JSON.parse(storedSess);
+} catch (e) {}
+
+// --- BOTS ---
+const BOTS = [
+    { name: "NetRunner_01", avatar: "🦊", color: "#fb923c" },
+    { name: "Cyber_Ghost", avatar: "👻", color: "#c084fc" },
+    { name: "SysAdmin", avatar: "👨‍💻", color: "#4ade80" }
+];
+
+// --- APP LOGIC ---
 const App = {
+    auth: {
+        temp: null,
+        data: {
+            n1: ["Neon", "Cyber", "Void", "Null", "Byte", "Data", "Glitch", "Pixel", "Synth", "Flux"],
+            n2: ["Wolf", "Drift", "Hunter", "Mind", "Walker", "Runner", "Blade", "Ghost", "Punk", "X"],
+            avs: ["👁️", "👾", "🤖", "💀", "👹", "🦊", "🦾", "🧠", "👽", "🦿"]
+        },
+        gen: () => {
+            const D = App.auth.data;
+            const name = D.n1[Math.floor(Math.random()*D.n1.length)] + "_" + D.n2[Math.floor(Math.random()*D.n2.length)] + "_" + Math.floor(Math.random()*99);
+            const av = D.avs[Math.floor(Math.random()*D.avs.length)];
+            $('gen-name').innerText = name; 
+            $('gen-avatar').innerText = av;
+            App.auth.temp = { name, avatar: av };
+        },
+        login: () => {
+            const u = App.auth.temp || { name: 'Guest', avatar: '👤' };
+            if (!Nexus.db.users) Nexus.db.users = [];
+            if(!Nexus.db.users.find(x => x.name === u.name)) { Nexus.db.users.push({ name: u.name, paid: false }); DB.save(); }
+            const user = Nexus.db.users.find(x => x.name === u.name);
+            Nexus.session = { ...u, role: 'user', paid: user.paid };
+            DB.sess(Nexus.session);
+            App.boot();
+        },
+        admin: () => {
+            const val = $('admin-pass').value;
+            if(val === Nexus.db.adminPassword) {
+                Nexus.session = { name: 'ROOT_ADMIN', role: 'admin', paid: true, avatar: '🛡️' };
+                DB.sess(Nexus.session);
+                App.boot();
+            } else {
+                showToast("ACCESS DENIED", "error");
+            }
+        }
+    },
+
     boot: () => {
         $('id-screen').classList.add('hidden');
         $('app-main').classList.remove('hidden');
+        $('set-username').innerText = Nexus.session.name;
         
-        // UI Updates
-        $('hdr-name').innerText = Nexus.session.name;
-        if(Nexus.session.role === 'admin') { $('admin-panel').classList.remove('hidden'); App.admin.render(); }
+        const isUnlocked = (Nexus.session.role === 'admin' || Nexus.session.paid);
+        ['video', 'ide', 'art', 'game'].forEach(id => {
+            const lock = $(`lock-${id}`);
+            if(isUnlocked) lock.classList.add('hidden'); else lock.classList.remove('hidden');
+        });
 
-        // Checks
-        if(!Nexus.session.paid && Nexus.session.role !== 'admin') {
-            ['video', 'ide', 'art', 'game'].forEach(id => $(`lock-${id}`).classList.remove('hidden'));
+        // Admin UI Toggle
+        if(Nexus.session.role === 'admin') {
+            $('admin-ui').classList.remove('hidden');
+            App.admin.render();
+        } else {
+            $('admin-ui').classList.add('hidden');
         }
+
+        App.chat.init();
+        App.chat.loadHistory();
+        App.video.init();
+        App.startHUD();
+
+        if(!window.botInterval) window.botInterval = setInterval(App.chat.botLoop, 15000);
         
-        // Render World
-        App.global.init();
+        showToast(`IDENTITY CONFIRMED: ${Nexus.session.name}`);
     },
 
     nav: (name) => {
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-        $('view-'+name).classList.add('active');
+        const target = $('view-'+name);
+        if(target) target.classList.add('active');
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        const map = {global:0, video:1, tools:2, set:3, radio:2, ide:2, art:2, game:2};
+        if(map[name] !== undefined) document.querySelectorAll('.nav-item')[map[name]].classList.add('active');
         if(name === 'ide') App.ide.run();
     },
 
     askAI: async (p) => {
-        if(Nexus.provider === 'puter' && Nexus.ready) return await puter.ai.chat(p);
+        if(Nexus.provider === 'puter' && window.puter && window.puter.ai) return await window.puter.ai.chat(p);
         if(Nexus.provider === 'groq' && Nexus.key) {
-            const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-                method:"POST", headers: {"Authorization": `Bearer ${Nexus.key}`}, 
-                body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{role:"user", content:p}] })
-            });
-            return (await res.json()).choices[0].message.content;
+            try {
+                const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                    method:"POST", headers: {"Authorization": `Bearer ${Nexus.key}`, "Content-Type":"application/json"}, 
+                    body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{role:"user", content:p}] })
+                });
+                const data = await res.json();
+                return data.choices?.[0]?.message?.content || "No response.";
+            } catch(e) { return "Groq Error."; }
         }
-        return "Offline";
+        return "AI Offline.";
     },
 
-    auth: { admin: () => { if($('admin-pass').value === Nexus.db.adminPassword) { Nexus.session = { name: 'Admin', role: 'admin', paid: true }; DB.sess(Nexus.session); location.reload(); } else alert("Wrong"); } },
-
-    global: {
-        init: () => {
-            const c = $('map-grid'); c.innerHTML = "";
-            // Me
-            const me = document.createElement('div'); me.className = "map-avatar"; me.style.borderColor = "#0ff";
-            me.innerHTML = `<div style="font-size:24px">${Nexus.session.avatar}</div><div style="font-size:9px; margin-top:5px; color:#0ff">${Nexus.session.name}</div>`;
-            c.appendChild(me);
-            // Sims
-            const sims = ["Razor", "Synth", "Zero"]; 
-            sims.forEach(n => { const d=document.createElement('div'); d.className="map-avatar opacity-50"; d.innerHTML=`<div style="font-size:20px">🤖</div><div style="font-size:8px; margin-top:5px;">${n}</div>`; c.appendChild(d); });
-        }
+    startHUD: () => {
+        // Clock
+        setInterval(() => {
+            const now = new Date();
+            $('hud-clock').innerText = now.toLocaleTimeString();
+        }, 1000);
+        // CPU Sim
+        setInterval(() => {
+            const load = Math.floor(Math.random() * 40) + 20; // 20-60%
+            $('cpu-fill').style.width = load + "%";
+        }, 2000);
     },
 
     chat: {
-        send: async () => {
-            const inp=$('chat-in'); const t=inp.value.trim(); if(!t) return; inp.value="";
-            const msg = document.createElement('div'); msg.className = "chat-msg me"; msg.innerHTML = `<span class="text-cyan-400 text-xs">${Nexus.session.name}:</span> ${t}`; $('chat-log').appendChild(msg);
-            const ai = document.createElement('div'); ai.className = "chat-msg"; ai.innerHTML = `<span class="text-gray-500 text-xs">System:</span> Thinking...`; $('chat-log').appendChild(ai);
-            const r = await App.askAI(t);
-            ai.innerHTML = `<span class="text-gray-500 text-xs">System:</span> ${r}`;
+        init: () => {
+            window.addEventListener('storage', (e) => {
+                if(e.key === 'nexus_msg_event') {
+                    const msg = JSON.parse(e.newValue);
+                    if(msg.sender !== Nexus.session.name) {
+                        App.chat.renderMsg(msg, false);
+                        DB.saveChat(msg);
+                    }
+                }
+            });
+        },
+        loadHistory: () => {
+            const h = JSON.parse(localStorage.getItem('nexus_chat_history') || '[]');
+            h.forEach(m => App.chat.renderMsg(m, m.sender === Nexus.session.name));
+            if(h.length === 0) {
+                App.chat.render({sender: 'System', text: '-- CHANNEL CLEARED --', avatar: '⚙️', isMe: false});
+            }
             $('chat-log').scrollTop = 9999;
+        },
+        send: async () => {
+            const inp = $('chat-in'); const t = inp.value.trim(); if(!t) return; inp.value="";
+            
+            const msgObj = { sender: Nexus.session.name, text: t, avatar: Nexus.session.avatar, time: Date.now() };
+            
+            if(t.startsWith('/ai ')) {
+                App.chat.renderMsg(msgObj, true);
+                DB.saveChat(msgObj);
+                App.chat.render({sender: 'System', text: 'PROCESSING...', avatar: '⚙️', isMe: false});
+                const response = await App.askAI(t.substring(4));
+                const aiMsg = { sender: 'AI_Core', text: response, avatar: '🤖', time: Date.now() };
+                App.chat.renderMsg(aiMsg, false);
+                DB.saveChat(aiMsg);
+                return;
+            }
+
+            App.chat.renderMsg(msgObj, true);
+            DB.saveChat(msgObj);
+            localStorage.setItem('nexus_msg_event', JSON.stringify(msgObj));
+            
+            if(Math.random() > 0.7) {
+                setTimeout(() => {
+                    const bot = BOTS[Math.floor(Math.random() * BOTS.length)];
+                    const replies = ["Affirmative.", "Interesting data.", "Encrypting...", "Seen.", "Copy that."];
+                    const bMsg = { sender: bot.name, text: replies[Math.floor(Math.random()*replies.length)], avatar: bot.avatar, time: Date.now() };
+                    App.chat.renderMsg(bMsg, false);
+                    DB.saveChat(bMsg);
+                }, 1000 + Math.random() * 2000);
+            }
+        },
+        renderMsg: (m, isMe) => {
+            const div = document.createElement('div');
+            div.className = `chat-msg ${isMe ? 'me' : 'other'}`;
+            let color = isMe ? '#fff' : '#ccc';
+            const bot = BOTS.find(b => b.name === m.sender);
+            if(bot) color = bot.color;
+            
+            div.innerHTML = `<div class="msg-meta"><span class="msg-name" style="color:${color}">${m.avatar} ${m.sender}</span></div><div>${m.text}</div>`;
+            $('chat-log').appendChild(div);
+            $('chat-log').scrollTop = 9999;
+        },
+        render: (m, isMe) => App.chat.renderMsg(m, isMe), // Alias
+        botLoop: () => {
+            if(Math.random() > 0.8) {
+                const bot = BOTS[Math.floor(Math.random() * BOTS.length)];
+                const chats = ["Checking system integrity...", "Sector 7 clear.", "Anyone have the decryption key?", "Signal weak."];
+                const m = { sender: bot.name, text: chats[Math.floor(Math.random()*chats.length)], avatar: bot.avatar, time: Date.now() };
+                App.chat.renderMsg(m, false);
+                DB.saveChat(m);
+            }
         }
     },
 
     video: {
-        start: async () => { if(Nexus.session.paid){ try { const s = await navigator.mediaDevices.getUserMedia({video:true,audio:true}); App.video.attach(Nexus.user,s,true); } catch(e){alert("Cam")} } },
-        stop: () => { $('video-grid').innerHTML=""; },
-        attach: (id, stream, muted) => { const box=document.createElement('div'); box.style.background="#111"; box.style.position="relative"; box.innerHTML=`<video autoplay playsinline ${muted?'muted':''} style="width:100%;height:100%;object-fit:cover;"></video><div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.5);font-size:10px;padding:2px;">${id}</div>`; box.querySelector('video').srcObject=stream; $('video-grid').appendChild(box); }
+        init: () => {},
+        start: async () => { 
+            if(!Nexus.session.paid && Nexus.session.role !== 'admin') { showToast("LOCKED", "error"); return; }
+            try { 
+                const s = await navigator.mediaDevices.getUserMedia({video:true,audio:true}); 
+                const box = document.createElement('div');
+                box.className = 'video-box';
+                box.innerHTML = `<video autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;"></video><div class="video-label"><span>ME</span><span class="text-green-500">●</span></div>`;
+                box.querySelector('video').srcObject = s;
+                $('video-grid').prepend(box);
+                showToast("Camera Active - Uplink Established");
+                
+                // Simulate Peers Joining
+                setTimeout(() => App.video.simPeer("NetRunner_01"), 2000);
+                setTimeout(() => App.video.simPeer("Cyber_Ghost"), 4000);
+            } catch(e) { showToast("Camera Error", "error"); } 
+        },
+        simPeer: (name) => {
+            const box = document.createElement('div');
+            box.className = 'video-box border-cyan-500';
+            box.innerHTML = `<div class="static-noise"></div><div class="video-label"><span>${name}</span><span class="text-yellow-500">●</span></div>`;
+            $('video-grid').appendChild(box);
+            showToast(`${name} joined the call`);
+        },
+        stop: () => { location.reload(); }
     },
 
-    img: { gen: () => { if(!Nexus.session.paid) return; const p=$('img-prompt').value; $('img-out').innerHTML=`<img src='https://image.pollinations.ai/prompt/${encodeURIComponent(p)}?width=512&height=512&nologo=true' class="w-full">`; } },
-    game: { gen: async () => { if(!Nexus.session.paid) return; const p=$('game-prompt').value; const code = await App.askAI("Write a single file HTML5 game code for: "+p); $('game-frame').contentDocument.open(); $('game-frame').contentDocument.write(code); $('game-frame').contentDocument.close(); } },
-    ide: { run: () => { $('ide-preview').contentDocument.open(); $('ide-preview').contentDocument.write($('ide-code').value); $('ide-preview').contentDocument.close(); }, ask: async () => { const r = await App.askAI("Fix this code: "+$('ide-code').value); $('ide-code').value=r; App.ide.run(); } },
     radio: {
-        list: [], playing: false,
-        search: (q) => { fetch(`https://de1.api.radio-browser.info/json/stations/byname/${q}?limit=10`).then(r=>r.json()).then(d => { App.radio.list=d; $('radio-list').innerHTML=""; d.forEach((s,i) => { const e=document.createElement('div'); e.className="p-2 bg-white/5 rounded mb-1 text-xs cursor-pointer hover:bg-white/10"; e.innerText=s.name; e.onclick=()=>App.radio.play(i); $('radio-list').appendChild(e); }); }); },
-        play: (i) => { const s=App.radio.list[i]; $('radio-mp3').src=s.url_resolved; $('radio-mp3').play(); App.radio.playing=true; },
-        toggle: () => { if(App.radio.playing){ $('radio-mp3').pause(); App.radio.playing=false; } else { $('radio-mp3').play(); App.radio.playing=true; } },
+        list: [], playing: false, currentIdx: -1,
+        search: (q) => { 
+            if(!q) return; 
+            $('radio-list').innerHTML = `<div class="text-center text-xs animate-pulse my-4">SCANNING...</div>`;
+            fetch(`https://de1.api.radio-browser.info/json/stations/byname/${q}?limit=15`)
+            .then(r=>r.json())
+            .then(d => { 
+                App.radio.list=d; 
+                $('radio-list').innerHTML=""; 
+                if(d.length === 0) return $('radio-list').innerHTML = `<div class="text-center text-xs text-gray-500 my-4">NO SIGNAL</div>`;
+                d.forEach((s,i) => { 
+                    const e=document.createElement('div'); 
+                    e.className="p-3 bg-white/5 rounded mb-2 text-xs cursor-pointer hover:bg-white/10 border-l-2 border-transparent hover:border-pink-500 transition flex justify-between items-center group"; 
+                    e.innerHTML=`<div><div class="font-bold text-pink-300 group-hover:text-white">${s.name}</div><div class="text-gray-500 text-[9px]">${s.bitrate}kbps</div></div> <span class="text-gray-600">▶</span>`; 
+                    e.onclick=()=>App.radio.play(i); 
+                    $('radio-list').appendChild(e); 
+                }); 
+            })
+            .catch(() => $('radio-list').innerHTML = `<div class="text-center text-xs text-red-500 my-4">NET_ERR</div>`);
+        }, 
+        play: (i) => { 
+            App.radio.currentIdx = i;
+            const s=App.radio.list[i]; 
+            if(!s) return; 
+            const audio = $('radio-mp3');
+            audio.src = s.url_resolved; 
+            audio.onerror = () => App.radio.next();
+            audio.play().catch(e => showToast("Stream Blocked", "error")); 
+            App.radio.playing=true; 
+            $('radio-title').innerText = ">> " + s.name; 
+            $('radio-bar').classList.add('active'); 
+            $('radio-toggle-btn').innerText = "❚❚"; 
+            showToast(`Playing: ${s.name}`);
+        },
+        next: () => {
+            if(App.radio.list.length === 0) return;
+            let nextIdx = App.radio.currentIdx + 1;
+            if(nextIdx >= App.radio.list.length) nextIdx = 0;
+            App.radio.play(nextIdx);
+        },
+        toggle: () => { 
+            const audio = $('radio-mp3');
+            if(App.radio.playing){ audio.pause(); App.radio.playing=false; $('radio-toggle-btn').innerText = "▶"; } 
+            else { audio.play(); App.radio.playing=true; $('radio-toggle-btn').innerText = "❚❚"; } 
+        }, 
+        stop: () => { const audio = $('radio-mp3'); audio.pause(); audio.src = ""; App.radio.playing = false; $('radio-bar').classList.remove('active'); }, 
         vol: (v) => { $('radio-mp3').volume=v/100; }
     },
-
-    settings: { ui: () => { const p=$('sel-prov').value; $('wrap-key').style.opacity = p==='puter' ? '0.3' : '1'; } },
-    
+    img: { 
+        gen: () => { 
+            if(!Nexus.session.paid && Nexus.session.role !== 'admin') return showToast("LOCKED", "error");
+            const p = $('img-prompt').value; 
+            if(!p) return showToast("Input Required", "error");
+            $('img-out').innerHTML = `<div class="text-pink-500 animate-pulse p-4 text-xs">RENDERING...</div>`;
+            const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(p)}?width=512&height=512&nologo=true&seed=${Math.floor(Math.random()*10000)}`;
+            const img = new Image();
+            img.onload = () => {
+                $('img-out').innerHTML = '';
+                img.className = "w-full rounded shadow-lg border border-gray-800";
+                $('img-out').appendChild(img);
+            };
+            img.src = url;
+        } 
+    },
+    game: { 
+        gen: async () => { 
+            if(!Nexus.session.paid && Nexus.session.role !== 'admin') return; 
+            const p=$('game-prompt').value; 
+            if(!p) return;
+            $('game-frame').srcdoc = `<body style="background:#000;color:#0ff;font-family:monospace;display:flex;justify-content:center;align-items:center;height:100vh;">COMPILING...</body>`; 
+            const code = await App.askAI("Write a SINGLE file HTML5 game for: "+p); 
+            $('game-frame').srcdoc = code; 
+        } 
+    },
+    ide: { 
+        run: () => { $('ide-preview').srcdoc = $('ide-code').value; }, 
+        ask: async () => { 
+            const r = await App.askAI("Fix this HTML/JS code. Return only code: "+$('ide-code').value); 
+            $('ide-code').value = r.replace(/```html|```/g, ''); 
+            App.ide.run(); 
+        } 
+    },
+    settings: { ui: () => { const p=$('sel-prov').value; $('wrap-key').style.opacity = p==='puter' ? '0.3' : '1'; if(p==='puter') $('txt-key').value = ''; } },
     pay: () => { window.open(PAY_LINK, '_blank'); },
-    share: () => { if(navigator.share) navigator.share({title:'NEXUS', url:location.href}); else alert("Link copied!"); },
-
+    share: () => { 
+        if(navigator.share) navigator.share({title:'NEXUS', url:location.href}); 
+        else { navigator.clipboard.writeText(location.href); showToast("Link Copied"); }
+    },
     admin: {
-        render: () => { $('user-list').innerHTML=""; Nexus.db.users.forEach((u,i) => { const el=document.createElement('div'); el.className="flex justify-between p-1 bg-white/5 text-xs mb-1"; el.innerHTML=`<span>${u.name}</span> <button onclick="App.admin.toggle(${i})" class="px-2 bg-red-900 text-white rounded text-[10px]">${u.paid ? 'UNLOCKED':'LOCKED'}</button>`; $('user-list').appendChild(el); }); },
-        toggle: (i) => { Nexus.db.users[i].paid = !Nexus.db.users[i].paid; DB.save(Nexus.db); App.admin.render(); alert("Updated"); location.reload(); }
+        render: () => {
+            const list = $('user-list'); list.innerHTML = '';
+            if(!Nexus.db.users) return;
+            Nexus.db.users.forEach((u, i) => {
+                const el = document.createElement('div');
+                el.className = `user-row ${u.paid ? 'premium' : 'locked'}`;
+                el.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <span class="font-bold text-xs ${u.paid ? 'text-green-400' : 'text-pink-400'}">${u.name}</span>
+                        <span class="text-[9px] text-gray-500">${u.paid ? 'PREM' : 'FREE'}</span>
+                    </div>
+                    <button onclick="App.admin.toggleUser(${i})" class="text-[9px] border border-gray-600 px-2 py-0.5 hover:bg-gray-700">TOGGLE</button>
+                `;
+                list.appendChild(el);
+            });
+        },
+        toggleUser: (idx) => {
+            Nexus.db.users[idx].paid = !Nexus.db.users[idx].paid;
+            DB.save();
+            App.admin.render();
+            showToast(`User ${Nexus.db.users[idx].name} Updated`);
+        },
+        clearChat: () => {
+            localStorage.removeItem('nexus_chat_history');
+            $('chat-log').innerHTML = '';
+            showToast("Chat History Purged");
+        },
+        resetSystem: () => {
+            if(confirm("FACTORY RESET: Wipe all data?")) {
+                localStorage.clear();
+                location.reload();
+            }
+        }
     }
 };
 
-// Listeners
-$('chat-in').addEventListener('keydown', e => e.key==='Enter' && App.chat.send());
-const aud = document.createElement('audio'); aud.id='radio-mp3'; document.body.appendChild(aud);
+// --- EVENTS ---
+ $('chat-in').addEventListener('keydown', e => e.key==='Enter' && App.chat.send());
+ $('radio-search').addEventListener('input', e => { if(e.target.value.length > 2) App.radio.search(e.target.value); });
 
-// Start
-ID.init();
-
+// --- INIT ---
+(function(){ App.auth.gen(); if(Nexus.session) App.boot(); })();
 </script>
 </body>
 </html>
